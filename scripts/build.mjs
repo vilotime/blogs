@@ -548,9 +548,10 @@ function renderPost(article, { articles, categories, tags }) {
     </details>`
       : '';
 
+  // 专栏目录：默认折叠，点标题才展开（避免长专栏把正文挤下去）
   const seriesCard = article.column
     ? `
-    <details class="toc-card column-card" open>
+    <details class="toc-card column-card">
       <summary>专栏：${esc(article.column.name)} <span class="toc-count">${article.column.articles.length}</span></summary>
       <ol class="column-list">${article.column.articles
         .map(
