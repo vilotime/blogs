@@ -521,6 +521,8 @@ samp {
 }
 
 .card-cat {
+  position: relative;
+  z-index: 2; /* 分类链接压在整卡链接之上，仍然可以单独点击 */
   font-weight: 600;
   color: var(--accent-text);
 }
@@ -544,8 +546,23 @@ samp {
   color: var(--text);
 }
 
+/* 标题链接铺满整张卡片：点卡片任何位置都能打开文章（HTML 里仍是合法的一个链接） */
+.card-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.card:hover .card-title a,
 .card-title a:hover {
   color: var(--accent);
+}
+
+/* 键盘 Tab 聚焦到卡片里的链接时，整张卡片描边提示 */
+.card:has(.card-title a:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .card-desc {
