@@ -212,10 +212,21 @@ function siteTagline() {
   return [config.title, config.subtitle].filter(Boolean).join(' · ');
 }
 
+/** 把站点内路径拼成绝对地址（微信/社交卡片要求 og:image 是绝对 URL） */
+function absoluteUrl(relPath) {
+  const base = String(config.siteUrl || '').trim().replace(/\/+$/, '');
+  if (!base || /example\.com/i.test(base)) return relPath;
+  return `${base}/${relPath}`;
+}
+
 function layout({ depth, title, description, active, activeCategory, bodyClass = '', content, sidebar }) {
   const rel = relFrom(depth);
   // 站点没有配置简介时，用「标题 · 小字」兜底
   const metaDescription = description || siteTagline();
+  // 微信收藏 / 分享卡片用的正方形封面（512×512）
+  // 配好 siteUrl 时是绝对地址（微信要求），否则退回相对路径
+  const coverUrl = absoluteUrl('assets/cover.png');
+  const ogImage = /^https?:/i.test(coverUrl) ? coverUrl : `${rel}assets/cover.png`;
   return `<!DOCTYPE html>
 <html lang="${config.lang}">
 <head>
@@ -225,9 +236,20 @@ function layout({ depth, title, description, active, activeCategory, bodyClass =
 <meta name="description" content="${esc(metaDescription)}">
 <meta name="author" content="${esc(config.author)}">
 <meta name="generator" content="mini-blog (零依赖静态生成器)">
+<!-- 分享 / 微信收藏卡片用的信息 -->
+<meta property="og:site_name" content="${esc(config.title)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(metaDescription)}">
 <meta property="og:type" content="${active === 'post' ? 'article' : 'website'}">
+<meta property="og:image" content="${esc(ogImage)}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:image:alt" content="${esc(config.title)}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(metaDescription)}">
+<meta name="twitter:image" content="${esc(ogImage)}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
 <link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${rel}pages/feed.xml">
 <link rel="stylesheet" href="${rel}assets/style.css">
@@ -284,7 +306,7 @@ function renderIndex({ articles, categories, columns, tags }) {
 
   return layout({
     depth: 0,
-    title: siteTagline(),
+    title: config.title,
     description: '',
     active: 'home',
     bodyClass: 'page-home',
@@ -650,7 +672,7 @@ function renderFeed(articles) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>${esc(siteTagline())}</title>
+    <title>${esc(config.title)}</title>
     <link>${config.siteUrl}</link>
     <description>${esc(siteTagline())}</description>
     <language>${config.lang}</language>
@@ -779,6 +801,12 @@ export async function main() {
   console.log(`  附件 ${mediaCount} 个 · 输出目录 ${outLabel}`);
   console.log(`  首页（最新 ${Math.min(config.latestCount, articles.length)} 篇）：${path.relative(ROOT, path.join(OUT, 'index.html')) || 'index.html'}`);
   if (!articles.length) console.log('  提示：article/ 下还没有文章。');
+  if (!config.siteUrl || /example\.com/i.test(String(config.siteUrl))) {
+    console.log(
+      '  提示：site.config.mjs 的 siteUrl 还是示例地址。微信收藏封面（og:image）和 RSS 里的文章链接需要绝对地址，\n' +
+        '        填成你的站点地址（如 https://<用户名>.github.io/<仓库名>）即可。',
+    );
+  }
 }
 
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
