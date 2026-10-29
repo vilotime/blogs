@@ -490,6 +490,8 @@ samp {
   background: var(--card);
   box-shadow: var(--shadow);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  /* 触屏点击时不出现灰色的文字高亮块 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card:hover {
@@ -522,7 +524,7 @@ samp {
 
 .card-cat {
   position: relative;
-  z-index: 2; /* 分类链接压在整卡链接之上，仍然可以单独点击 */
+  z-index: 2;
   font-weight: 600;
   color: var(--accent-text);
 }
@@ -546,14 +548,7 @@ samp {
   color: var(--text);
 }
 
-/* 标题链接铺满整张卡片：点卡片任何位置都能打开文章（HTML 里仍是合法的一个链接） */
-.card-title a::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-
+/* 桌面端（有鼠标）：只有标题是链接，点卡片其它地方不跳转，摘要文字可自由选中 */
 .card:hover .card-title a,
 .card-title a:hover {
   color: var(--accent);
@@ -563,6 +558,31 @@ samp {
 .card:has(.card-title a:focus-visible) {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* 触屏设备（手机/平板）：整张卡片可点，且点击时不出现文字高亮 */
+@media (hover: none), (pointer: coarse) {
+  .card {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  /* 标题链接的影子铺满整张卡片（HTML 里仍是合法的一个链接） */
+  .card-title a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .card-cat {
+    position: relative;
+    z-index: 2; /* 分类链接压在整卡链接之上，仍然可单独点 */
+  }
+
+  .card:active {
+    background: var(--bg-soft);
+  }
 }
 
 .card-desc {
