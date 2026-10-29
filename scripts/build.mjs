@@ -6,6 +6,7 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import config from '../site.config.mjs';
 import { loadContent } from './lib/content.mjs';
@@ -13,6 +14,21 @@ import { escapeHtml as esc, renderMarkdown } from './lib/markdown.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
+
+/** 样式/脚本的版本号（内容哈希），用来给 <link>/<script> 加 ?v=，避免浏览器缓存旧的 CSS */
+let assetVersion = { css: '', js: '' };
+
+async function computeAssetVersion() {
+  const digest = async (relPath) => {
+    try {
+      const buf = await fs.readFile(path.join(ROOT, relPath));
+      return crypto.createHash('sha1').update(buf).digest('hex').slice(0, 8);
+    } catch {
+      return '';
+    }
+  };
+  assetVersion = { css: await digest('assets/style.css'), js: await digest('assets/app.js') };
+}
 
 function argValue(flag) {
   const index = process.argv.indexOf(flag);
@@ -229,6 +245,8 @@ function layout({ depth, title, description, active, activeCategory, bodyClass =
   // 配好 siteUrl 时是绝对地址（微信要求），否则退回相对路径
   const coverUrl = absoluteUrl('assets/cover.png');
   const ogImage = /^https?:/i.test(coverUrl) ? coverUrl : `${rel}assets/cover.png`;
+  const cssUrl = `${rel}assets/style.css${assetVersion.css ? `?v=${assetVersion.css}` : ''}`;
+  const jsUrl = `${rel}assets/app.js${assetVersion.js ? `?v=${assetVersion.js}` : ''}`;
   return `<!DOCTYPE html>
 <html lang="${config.lang}">
 <head>
@@ -254,7 +272,7 @@ function layout({ depth, title, description, active, activeCategory, bodyClass =
 <meta name="twitter:image" content="${esc(ogImage)}">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
 <link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${rel}pages/feed.xml">
-<link rel="stylesheet" href="${rel}assets/style.css">
+<link rel="stylesheet" href="${cssUrl}">
 <script>
   (function () {
     try {
@@ -274,7 +292,7 @@ function layout({ depth, title, description, active, activeCategory, bodyClass =
   </div>
 </div>
 <button class="to-top" type="button" data-to-top aria-label="回到顶部">↑</button>
-<script src="${rel}assets/app.js" defer></script>
+<script src="${jsUrl}" defer></script>
 </body>
 </html>`;
 }
@@ -746,6 +764,7 @@ export async function main() {
   const started = Date.now();
   await cleanOutput();
   await fs.mkdir(OUT, { recursive: true });
+  await computeAssetVersion();
 
   const { articles, categories, columns, tags } = loadContent(ROOT, { columnRoot: config.columnRoot });
   siteColumns = columns;

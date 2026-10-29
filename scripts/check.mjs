@@ -56,7 +56,9 @@ for (const file of htmlFiles) {
   while ((match = attrRe.exec(html))) {
     const url = match[1];
     if (/^(?:[a-z]+:|\/\/|#|data:)/i.test(url)) continue;
-    const [pathname, hash] = url.split('#');
+    const [rawPath, hash] = url.split('#');
+    // 去掉 ?v=xxx 这类查询串，只校验真实文件路径
+    const pathname = rawPath.split('?')[0];
     if (!pathname) {
       // 纯锚点：检查本页是否有对应 id
       checked += 1;
