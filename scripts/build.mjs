@@ -111,10 +111,12 @@ function compactItem(article, rel) {
 
 let siteColumns = [];
 function brandHtml(rel) {
+  // 边栏品牌用短名字（config.brand），网页标题 / 微信标题用 config.title
+  const brand = config.brand || config.title;
   return `<a class="brand" href="${rel}index.html">
           <span class="brand-mark" aria-hidden="true"></span>
           <span class="brand-text">
-            <strong>${esc(config.title)}</strong>
+            <strong>${esc(brand)}</strong>
             <small>${esc(config.subtitle)}</small>
           </span>
         </a>`;

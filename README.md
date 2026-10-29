@@ -196,10 +196,11 @@ article/
 
 ```js
 const config = {
-  title: '博客',             // 站点名（边栏顶部）
-  subtitle: '@vilotime',     // 站点名下面那行小字
+  title: '时光不语的博客',    // 网页标题 / 微信收藏标题 / RSS 用（首页标题=这一行，内页=「页面名 · 这一行」）
+  brand: '博客',             // 边栏顶部显示的品牌名（站内用的短名字）
+  subtitle: '@vilotime',     // 品牌名旁边那行小字
   author: 'Vilot',
-  siteUrl: 'https://example.com', // 部署地址，用于 RSS
+  siteUrl: 'https://example.com', // 部署地址；微信收藏封面（og:image）和 RSS 需要绝对地址，务必填真实域名
   latestCount: 10,          // 首页最多展示多少篇（默认 10）
   columnRoot: '专栏',        // 存放专栏的容器文件夹名（article/<columnRoot>/<专栏名>/）
   outputDir: '.',           // 输出目录：'.' = 根目录（默认）；CI 用 --out dist 覆盖
