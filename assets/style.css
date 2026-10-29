@@ -548,9 +548,9 @@ samp {
   color: var(--text);
 }
 
-/* 桌面端（有鼠标）：只有标题是链接，点卡片其它地方不跳转，摘要文字可自由选中 */
-.card:hover .card-title a,
-.card-title a:hover {
+/* 桌面端：只有鼠标移到标题文字上，标题才变红（和最初的行为一致） */
+.card-title a:hover,
+.card-title a:focus-visible {
   color: var(--accent);
 }
 
