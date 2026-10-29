@@ -1,0 +1,27 @@
+# 依赖目录（本项目零依赖，通常不会出现）
+node_modules/
+
+# ---------- 构建产物：只在本地生成，不进仓库 ----------
+# 全部用 / 开头，只匹配项目根目录，避免误伤 article/ 里同名的分类文件夹
+/dist/
+/index.html
+/pages/
+/category/
+/column/
+/tag/
+/post/
+/media/
+/.nojekyll
+# 旧版本可能生成在根目录的单文件
+/categories.html
+/archive.html
+/tags.html
+/feed.xml
+
+# ---------- 其他项目 / 临时文件 ----------
+# 根目录下的 games/ 是另一个独立项目（自带 .git），不纳入本仓库
+/games/
+.DS_Store
+Thumbs.db
+*.log
+.tmp*

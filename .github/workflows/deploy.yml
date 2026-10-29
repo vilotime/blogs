@@ -1,0 +1,69 @@
+name: 构建并发布到 GitHub Pages
+
+# 你只需要改 article/ 里的 Markdown 并 push，剩下的事情这里自动完成：
+# 构建（输出到 dist/）→ 校验链接 → 上传 → 发布到 GitHub Pages。
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'article/**'
+      - 'assets/**'
+      - 'scripts/**'
+      - 'site.config.mjs'
+      - 'package.json'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+# 只允许一个发布任务同时进行，新的推送会取消上一次未完成的发布
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: 构建静态站点
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 项目零依赖，不需要 npm install，直接跑构建脚本
+      - name: 生成站点（输出到 dist/）
+        run: node scripts/build.mjs
+        env:
+          BLOG_OUTPUT: dist
+
+      - name: 自检（断链检查）
+        run: node scripts/check.mjs
+        env:
+          BLOG_OUTPUT: dist
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传站点产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: 发布到 GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4
