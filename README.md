@@ -49,50 +49,19 @@ npm run clean                          # 清理生成物，回到「纯源码」
 
 ```text
 blogs/
-├── article/                    # ✍️ 唯一需要你编辑的目录
-│   ├── 技术笔记/                # 分类文件夹 = 分类名（可嵌套：技术笔记/前端/CSS）
-│   │   ├── _index.md           # 可选：这个分类的简介（title / description / order）
-│   │   ├── 2025-05-18-css-design-tokens.md
-│   │   └── images/pipeline.svg # 可选：文章配图，和文章放一起即可
-│   ├── 生活随笔/
-│   └── 专栏/                    # 📌 专栏容器（名字可用 columnRoot 配置）
-│       ├── 前端手记/            #   一个文件夹 = 一个专栏
-│       │   ├── _index.md       #   专栏简介（title / description / order）
-│       │   ├── 01-工程化要解决什么.md
-│       │   └── 04-CI与发布流程.md
-│       └── 阅读与生活/
-│           ├── _index.md
-│           └── 2024-11-20-mythical-man-month.md
-├── assets/                     # 站点样式与脚本（style.css / app.js，会被页面直接引用）
-├── scripts/                    # 构建工具
-│   ├── build.mjs               #   生成站点
-│   ├── serve.mjs               #   本地预览（请求时自动重建）
-│   ├── new-post.mjs            #   新建文章
-│   ├── check.mjs               #   产物自检
-│   ├── clean.mjs               #   清理生成物
-│   └── lib/                    #   markdown.mjs（渲染器）、content.mjs（文章扫描）
-├── .github/workflows/deploy.yml # 🚀 push 后自动构建并发布到 GitHub Pages
-├── site.config.mjs             # ⚙️ 站点配置：标题、作者、导航、最新文章数量
+├── article/            # ✍️ 文章（唯一需要编辑的目录：分类文件夹 / 专栏文件夹）
+├── assets/             # 样式、脚本、图标、分享封面
+├── scripts/            # 构建工具（生成站点 / 本地预览 / 自检 / 建文章）
+├── docs/               # 说明文档（图标与封面的规则）
+├── .github/            # GitHub Actions 自动部署工作流
+├── site.config.mjs     # ⚙️ 站点配置：标题、作者、导航、站点地址等
 ├── package.json  README.md  .gitignore
 │
-│   ── 生成物（不提交，只有 index.html 在根目录，其余都在子目录里）──
-├── index.html                  # 首页：最新文章列表（默认最多 10 篇）
-├── pages/                      # 次级页面
-│   ├── categories.html         #   分类总览
-│   ├── columns.html            #   专栏总览
-│   ├── archive.html            #   归档
-│   └── feed.xml                #   RSS
-├── category/<分类>.html         # 分类页
-├── column/<专栏>.html           # 专栏页
-├── post/<分类>/<文章>.html      # 文章页
-├── column/<专栏>/<文章>.html    # 专栏文章页
-├── media/                      # 从 article/ 复制过来的图片等附件
-└── .nojekyll                   # 供 GitHub Pages 使用
+└── 构建产物（不提交，npm run build 时生成）：
+    index.html、pages/、category/、column/、post/、tag/、media/、favicon.ico、.nojekyll
 ```
 
-> 标签页（`pages/tags.html`、`tag/`）**只在文章里出现标签时才生成**，平时不会多出这些页面和目录。
-
-> 根目录下的 `games/` 是另一个独立项目（自带 `.git`），已加入 `.gitignore`，与本博客互不影响。
+> 生成物只在构建时出现，已在 `.gitignore` 中排除；`npm run clean` 可一键清掉。
 
 
 ---

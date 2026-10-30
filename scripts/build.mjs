@@ -256,6 +256,14 @@ function hasFullSiteUrl() {
   return /^https?:\/\/\S+/i.test(String(config.siteUrl || '').trim()) && !/example\.com/i.test(String(config.siteUrl));
 }
 
+/** 页面绝对地址（用于 og:url）；siteUrl 未配成完整地址时返回空字符串 */
+function absolutePageUrl(pagePath) {
+  if (!hasFullSiteUrl()) return '';
+  const base = String(config.siteUrl).trim().replace(/\/+$/, '');
+  const clean = String(pagePath || '').replace(/^\/+/, '');
+  return clean ? `${base}/${clean}` : `${base}/`;
+}
+
 /** 站点图标 <link> 链（.ico 放最前兜底，其后是 svg 和多尺寸 png） */
 function iconTags(rel) {
   const icons = config.icons || {};
@@ -292,7 +300,7 @@ function ogImageTags() {
   return lines.join('\n');
 }
 
-function layout({ depth, title, tabTitle, description, active, activeCategory, bodyClass = '', content, sidebar }) {
+function layout({ depth, title, tabTitle, pagePath = '', description, active, activeCategory, bodyClass = '', content, sidebar }) {
   const rel = relFrom(depth);
   // 站点没有配置简介时，用「标题 · 小字」兜底
   const metaDescription = description || siteTagline();
@@ -302,6 +310,9 @@ function layout({ depth, title, tabTitle, description, active, activeCategory, b
   const twitterCardFallback = ogTags ? '' : `<meta name="twitter:card" content="summary">\n`;
   // 浏览器标签页：传了 tabTitle 就用它（文章页用文章标题），否则统一用站点标题
   const pageTabTitle = tabTitle || config.tabTitle || config.title || title;
+  // og:url：本页的绝对地址（子路径站点的规范地址就靠它指明）
+  const ogUrl = absolutePageUrl(pagePath);
+  const ogUrlTag = ogUrl ? `<meta property="og:url" content="${esc(ogUrl)}">` : '';
   return `<!DOCTYPE html>
 <html lang="${config.lang}">
 <head>
@@ -316,6 +327,7 @@ function layout({ depth, title, tabTitle, description, active, activeCategory, b
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(metaDescription)}">
 <meta property="og:type" content="${active === 'post' ? 'article' : 'website'}">
+${ogUrlTag}
 ${ogTags}
 ${twitterCardFallback}<meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(metaDescription)}">
@@ -376,6 +388,7 @@ function renderIndex({ articles, categories, columns, tags }) {
   return layout({
     depth: 0,
     title: config.title,
+    pagePath: '',
     description: '',
     active: 'home',
     bodyClass: 'page-home',
@@ -413,6 +426,7 @@ function renderCategories({ articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `分类 · ${config.title}`,
+        pagePath: 'pages/categories.html',
     tabTitle: `分类 · ${config.brand || "博客"}`,
     description: `全部文章分类，共 ${categories.length} 个。`,
     active: 'categories',
@@ -438,6 +452,7 @@ function renderCategory(category, { articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `${category.name} · ${config.title}`,
+        pagePath: `category/${category.slug}.html`,
     tabTitle: `分类 · ${config.brand || "博客"}`,
     description: category.description || `${category.name}分类下的全部文章`,
     active: 'categories',
@@ -479,6 +494,7 @@ function renderColumns({ articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `专栏 · ${config.title}`,
+        pagePath: 'pages/columns.html',
     tabTitle: `专栏 · ${config.brand || "博客"}`,
     description: `全部专栏，共 ${columns.length} 个。`,
     active: 'columns',
@@ -504,6 +520,7 @@ function renderColumn(column, { articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `${column.name} · ${config.title}`,
+        pagePath: column.url,
     tabTitle: `专栏 · ${config.brand || "博客"}`,
     description: column.description || `${column.name}专栏下的全部文章`,
     active: 'columns',
@@ -561,6 +578,7 @@ function renderArchive({ articles, categories, tags }) {
   return layout({
     depth: 1,
     title: `归档 · ${config.title}`,
+        pagePath: 'pages/archive.html',
     description: `全部 ${articles.length} 篇文章归档`,
     active: 'archive',
     content,
@@ -587,6 +605,7 @@ function renderTags({ tags, articles, categories, columns }) {
   return layout({
     depth: 1,
     title: `标签 · ${config.title}`,
+        pagePath: 'pages/tags.html',
     description: `全部 ${tags.length} 个标签`,
     active: 'tags',
     content,
@@ -607,6 +626,7 @@ function renderTag(tag, { articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `#${tag.name} · ${config.title}`,
+        pagePath: `tag/${tag.slug}.html`,
     description: `标签 ${tag.name} 下的全部文章`,
     active: 'tags',
     content,
@@ -708,6 +728,7 @@ function renderPost(article, { articles, categories, tags }) {
   return layout({
     depth: 2,
     title: `${article.title} · ${config.title}`,
+        pagePath: article.url,
     // 读文章时，浏览器标签页只显示文章标题
     tabTitle: article.title,
     description: article.description,
