@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 静态站点生成器：把 article/ 下的 Markdown 文章编译成静态站点
  * 输出目录优先级：命令行 --out <dir> > 环境变量 BLOG_OUTPUT > site.config.mjs 的 outputDir > '.'
  *   - 本地：node scripts/build.mjs                  → 生成到项目根目录（index.html 在根目录）
@@ -292,7 +292,7 @@ function ogImageTags() {
   return lines.join('\n');
 }
 
-function layout({ depth, title, description, active, activeCategory, bodyClass = '', content, sidebar }) {
+function layout({ depth, title, tabTitle, description, active, activeCategory, bodyClass = '', content, sidebar }) {
   const rel = relFrom(depth);
   // 站点没有配置简介时，用「标题 · 小字」兜底
   const metaDescription = description || siteTagline();
@@ -300,12 +300,14 @@ function layout({ depth, title, description, active, activeCategory, bodyClass =
   const jsUrl = `${rel}assets/app.js${assetVersion.js ? `?v=${assetVersion.js}` : ''}`;
   const ogTags = ogImageTags();
   const twitterCardFallback = ogTags ? '' : `<meta name="twitter:card" content="summary">\n`;
+  // 浏览器标签页：传了 tabTitle 就用它（文章页用文章标题），否则统一用站点标题
+  const pageTabTitle = tabTitle || config.tabTitle || config.title || title;
   return `<!DOCTYPE html>
 <html lang="${config.lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(title)}</title>
+<title>${esc(pageTabTitle)}</title>
 <meta name="description" content="${esc(metaDescription)}">
 <meta name="author" content="${esc(config.author)}">
 <meta name="generator" content="mini-blog (零依赖静态生成器)">
@@ -411,6 +413,7 @@ function renderCategories({ articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `分类 · ${config.title}`,
+    tabTitle: `分类 · ${config.brand || "博客"}`,
     description: `全部文章分类，共 ${categories.length} 个。`,
     active: 'categories',
     content,
@@ -435,6 +438,7 @@ function renderCategory(category, { articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `${category.name} · ${config.title}`,
+    tabTitle: `分类 · ${config.brand || "博客"}`,
     description: category.description || `${category.name}分类下的全部文章`,
     active: 'categories',
     activeCategory: category.slug,
@@ -475,6 +479,7 @@ function renderColumns({ articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `专栏 · ${config.title}`,
+    tabTitle: `专栏 · ${config.brand || "博客"}`,
     description: `全部专栏，共 ${columns.length} 个。`,
     active: 'columns',
     content,
@@ -499,6 +504,7 @@ function renderColumn(column, { articles, categories, columns, tags }) {
   return layout({
     depth: 1,
     title: `${column.name} · ${config.title}`,
+    tabTitle: `专栏 · ${config.brand || "博客"}`,
     description: column.description || `${column.name}专栏下的全部文章`,
     active: 'columns',
     activeColumn: column.slug,
@@ -702,6 +708,8 @@ function renderPost(article, { articles, categories, tags }) {
   return layout({
     depth: 2,
     title: `${article.title} · ${config.title}`,
+    // 读文章时，浏览器标签页只显示文章标题
+    tabTitle: article.title,
     description: article.description,
     active: 'post',
     activeCategory: article.category ? article.category.slug : null,
