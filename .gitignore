@@ -12,7 +12,6 @@ node_modules/
 /post/
 /media/
 /.nojekyll
-/favicon.ico   # 构建时从 assets/favicon.ico 复制到站点根目录
 # 旧版本可能生成在根目录的单文件
 /categories.html
 /archive.html

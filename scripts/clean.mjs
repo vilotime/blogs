@@ -15,7 +15,7 @@ const OUT = path.resolve(
   ROOT,
   argValue('--out') || process.env.BLOG_OUTPUT || config.outputDir || '.',
 );
-const GENERATED = ['index.html', 'pages', '.nojekyll', 'favicon.ico', 'category', 'column', 'tag', 'post', 'media'];
+const GENERATED = ['index.html', 'pages', '.nojekyll', 'category', 'column', 'tag', 'post', 'media'];
 
 if (OUT === ROOT) {
   for (const name of GENERATED) fs.rmSync(path.join(ROOT, name), { recursive: true, force: true });

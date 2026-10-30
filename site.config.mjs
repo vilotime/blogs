@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 站点配置：改这里就能定制整站
  */
 const config = {
@@ -23,7 +23,7 @@ const config = {
    * 只给 SVG 的话 Bing 等会退回托管域名（GitHub）的图标。
    */
   icons: {
-    ico: 'assets/favicon.ico',
+    ico: 'favicon.ico',
     svg: 'assets/img/favicon.svg',
     png: [
       { src: 'assets/img/icon-16.png', sizes: '16x16' },

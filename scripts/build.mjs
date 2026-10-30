@@ -70,7 +70,6 @@ const GENERATED = [
   'tag',
   'post',
   'media',
-  'favicon.ico',
   // 兼容旧版本生成在根目录的单文件
   'categories.html',
   'archive.html',
@@ -891,11 +890,15 @@ export async function main() {
   const icoSource = config.icons && config.icons.ico ? path.join(ROOT, config.icons.ico) : null;
   if (icoSource) {
     const icoStat = await fs.stat(icoSource).catch(() => null);
-    if (icoStat) {
-      await fs.copyFile(icoSource, path.join(OUT, 'favicon.ico'));
-      iconNote = 'favicon.ico 已放到站点根目录';
-    } else {
+    const icoDest = path.join(OUT, 'favicon.ico');
+    if (!icoStat) {
       iconNote = `× 找不到 ${config.icons.ico}（先跑 node scripts/make-icons.mjs）`;
+    } else if (path.resolve(icoSource) === path.resolve(icoDest)) {
+      // 输出到项目根目录时，favicon.ico 本来就躺在站点根目录
+      iconNote = 'favicon.ico 已在站点根目录';
+    } else {
+      await fs.copyFile(icoSource, icoDest);
+      iconNote = 'favicon.ico 已放到站点根目录';
     }
   }
 

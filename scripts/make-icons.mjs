@@ -1,7 +1,7 @@
-/**
+﻿/**
  * 图标工具：
  *   1. 校验 assets/img/ 下的图标文件（是否真的存在、PNG 实际尺寸和声明是否一致）
- *   2. 用 icon-16/32/48.png 组装出根目录用的 assets/favicon.ico（内含多个尺寸）
+ *   2. 用 icon-16/32/48.png 组装出项目根目录的 favicon.ico（内含多个尺寸）
  *
  * 用法：node scripts/make-icons.mjs [--check]
  *   --check  只校验，不写文件
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const IMG = path.join(ROOT, 'assets', 'img');
-const ICO_OUT = path.join(ROOT, 'assets', 'favicon.ico');
+const ICO_OUT = path.join(ROOT, 'favicon.ico');
 const CHECK_ONLY = process.argv.includes('--check');
 
 const PNG_SIZES = [
@@ -106,8 +106,8 @@ function main() {
   } else if (fs.existsSync(ICO_OUT)) {
     const buf = fs.readFileSync(ICO_OUT);
     const realIco = buf.readUInt16LE(2) === 1 && buf.readUInt16LE(0) === 0;
-    if (!realIco) problems.push('assets/favicon.ico 不是合法的 ICO（可能是改了扩展名的 PNG）');
-    rows.push(`  assets/favicon.ico     ${buf.readUInt16LE(4)} 个尺寸  ${(buf.length / 1024).toFixed(1)} KB`);
+    if (!realIco) problems.push('favicon.ico 不是合法的 ICO（可能是改了扩展名的 PNG）');
+    rows.push(`  favicon.ico            ${buf.readUInt16LE(4)} 个尺寸  ${(buf.length / 1024).toFixed(1)} KB`);
   }
 
   console.log('图标清单：');

@@ -1,4 +1,4 @@
-# 博客
+﻿# 博客
 
 一个**零依赖**的 Markdown 静态博客，为 **GitHub Pages** 设计：文章只写在 `article/` 里，push 之后 GitHub Actions 自动构建并发布；本地写完刷新浏览器就能看到效果。
 
@@ -185,9 +185,9 @@ const config = {
 
 | 东西 | 文件 | 说明 |
 | --- | --- | --- |
-| 站点图标 | `assets/img/favicon.svg`（矢量源）+ `icon-16/32/192/512.png` + `apple-touch-icon.png` + `assets/favicon.ico` | 构建时把 `.ico` 复制到**站点根目录**的 `/favicon.ico`——爬虫只认这个路径，只给 SVG 的话 Bing 会退回显示 GitHub 的图标 |
+| 站点图标 | 根目录的 **`favicon.ico`**（源码就在这里）+ `assets/img/favicon.svg`（矢量源）+ `icon-16/32/192/512.png` + `apple-touch-icon.png` | 子路径站点必须显式写 `<link rel="icon">`，不能指望自动探测——自动探测打的是域名根，GitHub Pages 项目站上那是 `用户名.github.io` 的图标 |
 | 分享封面 | `assets/img/og-cover.png`（800×800 方图，源文件 `cover.svg`） | 微信收藏 / QQ / Twitter 卡片用它；宽高由构建脚本从 PNG 头里读出来，换图不用改数字 |
-| 重新生成图标 | `node scripts/make-icons.mjs` | 用 `icon-16/32/48.png` 组装 `assets/favicon.ico` 并校验所有图标尺寸；加 `--check` 只校验 |
+| 重新生成图标 | `node scripts/make-icons.mjs` | 用 `icon-16/32/48.png` 组装根目录的 `favicon.ico` 并校验所有图标尺寸；加 `--check` 只校验 |
 
 构建时的行为（对应文档里的几条要求）：
 

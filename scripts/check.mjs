@@ -114,6 +114,23 @@ if (config.cover && fs.existsSync(path.join(SITE, config.cover))) {
     const w = buf.readUInt32BE(16);
     const h = buf.readUInt32BE(20);
     if (w !== h) iconProblems.push(`分享封面 ${config.cover} 是 ${w}×${h}，不是方图（微信会裁掉两边）`);
+
+    // 每个页面的 og:image 必须是绝对地址，且声明尺寸和封面真实尺寸一致
+    for (const file of htmlFiles) {
+      const html = fs.readFileSync(file, 'utf8');
+      const page = path.relative(SITE, file);
+      const ogImage = /<meta property="og:image" content="([^"]*)">/.exec(html)?.[1];
+      const declaredW = /og:image:width" content="(\d+)"/.exec(html)?.[1];
+      const declaredH = /og:image:height" content="(\d+)"/.exec(html)?.[1];
+      if (ogImage && !/^https?:\/\//i.test(ogImage)) {
+        iconProblems.push(`${page} → og:image 不是绝对地址（微信等不会抓相对路径）：${ogImage}`);
+      }
+      if ((declaredW && Number(declaredW) !== w) || (declaredH && Number(declaredH) !== h)) {
+        iconProblems.push(
+          `${page} → og:image 尺寸声明 ${declaredW}×${declaredH}，封面实际 ${w}×${h}`,
+        );
+      }
+    }
   }
 }
 if (iconProblems.length) problems.push(...iconProblems);
