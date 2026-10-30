@@ -86,9 +86,20 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: 24px;
-  /* 始终给竖直滚动条留位置：页面有/没有滚动条时，内容宽度不会跳动 */
   overflow-y: scroll;
+  /* 始终给滚动条留位置：即使某些浏览器不隐藏默认滚动条，内容宽度也不会跳动 */
   scrollbar-gutter: stable;
+  /* 隐藏浏览器默认滚动条（顶部已有阅读进度条提示位置） */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Chromium / Safari：整页滚动条不占位、不显示；滚动本身不受影响 */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 body {
@@ -1432,11 +1443,8 @@ samp {
   color: var(--accent-text);
 }
 
-/* 按下时只变色不缩放：缩放会让按钮在光标下变小，光标图标会闪一下 */
 .icon-btn:active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  transform: scale(0.95);
 }
 
 .icon-btn:focus-visible {
@@ -1520,10 +1528,8 @@ samp {
     transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.12s ease;
   }
 
-  /* 按下时只变色不缩放：缩小会让光标脱离按钮，图标会闪 */
   .nav-toggle:active {
-    border-color: var(--accent);
-    background: var(--accent-soft);
+    transform: scale(0.94);
   }
 
   .nav-toggle .bars,
