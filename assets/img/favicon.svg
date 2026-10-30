@@ -6,7 +6,7 @@
       <stop offset="100%" stop-color="#8e352c"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="140" ry="140" fill="url(#bg)"/>
   <text x="256" y="366" text-anchor="middle"
         font-family="Microsoft YaHei, PingFang SC, Songti SC, Segoe UI, system-ui, sans-serif"
         font-size="300" font-weight="700" fill="#fffdfa">时</text>

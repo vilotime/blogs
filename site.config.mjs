@@ -16,7 +16,7 @@ const config = {
   /** HTML lang */
   lang: 'zh-CN',
   /** 部署后的站点地址（用于 RSS、分享封面；必须是完整地址，微信/社交卡片要绝对 URL） */
-  siteUrl: 'https://vilotime.github.io/games',
+  siteUrl: 'https://vilotime.github.io/blogs',
   /**
    * 站点图标（规则见 docs/cover-and-icons.md）
    * .ico 会在构建时复制到「站点根目录」的 /favicon.ico —— 搜索引擎只认这个路径，
