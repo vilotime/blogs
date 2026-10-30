@@ -210,6 +210,23 @@ const config = {
 
 改样式改 `assets/style.css`（颜色变量集中在文件顶部 `:root` 与 `[data-theme="dark"]`，字体变量是 `--font-sans`），改交互改 `assets/app.js`。
 
+### 图标与分享封面
+
+规则细节见 **`docs/cover-and-icons.md`**，这里只记这套博客里的位置：
+
+| 东西 | 文件 | 说明 |
+| --- | --- | --- |
+| 站点图标 | `assets/img/favicon.svg`（矢量源）+ `icon-16/32/192/512.png` + `apple-touch-icon.png` + `assets/favicon.ico` | 构建时把 `.ico` 复制到**站点根目录**的 `/favicon.ico`——爬虫只认这个路径，只给 SVG 的话 Bing 会退回显示 GitHub 的图标 |
+| 分享封面 | `assets/img/og-cover.png`（800×800 方图，源文件 `cover.svg`） | 微信收藏 / QQ / Twitter 卡片用它；宽高由构建脚本从 PNG 头里读出来，换图不用改数字 |
+| 重新生成图标 | `node scripts/make-icons.mjs` | 用 `icon-16/32/48.png` 组装 `assets/favicon.ico` 并校验所有图标尺寸；加 `--check` 只校验 |
+
+构建时的行为（对应文档里的几条要求）：
+
+- `og:image` **只在 `siteUrl` 是完整地址时才输出**，否则整段跳过，不塞抓不到的相对地址；
+- 方图自动配 `twitter:card=summary`（不是方图会自动切成 `summary_large_image`）；
+- 图标按 `.ico` → `svg` → 多尺寸 `png` → `apple-touch-icon` 的顺序输出 `<link>` 链；
+- `node scripts/check.mjs` 会顺带校验：根目录有没有 `favicon.ico`、是不是**真的 ICO**、PNG 的 `sizes` 和真实尺寸是否一致、封面是不是方图。
+
 小功能：
 
 - 边栏底部可切换**深浅色主题**（记忆到浏览器），默认跟随系统；

@@ -15,8 +15,26 @@ const config = {
   author: 'Vilot',
   /** HTML lang */
   lang: 'zh-CN',
-  /** 部署后的站点地址（用于 RSS，可填本地地址） */
-  siteUrl: 'https://example.com',
+  /** 部署后的站点地址（用于 RSS、分享封面；必须是完整地址，微信/社交卡片要绝对 URL） */
+  siteUrl: 'https://vilotime.github.io/games',
+  /**
+   * 站点图标（规则见 docs/cover-and-icons.md）
+   * .ico 会在构建时复制到「站点根目录」的 /favicon.ico —— 搜索引擎只认这个路径，
+   * 只给 SVG 的话 Bing 等会退回托管域名（GitHub）的图标。
+   */
+  icons: {
+    ico: 'assets/favicon.ico',
+    svg: 'assets/img/favicon.svg',
+    png: [
+      { src: 'assets/img/icon-16.png', sizes: '16x16' },
+      { src: 'assets/img/icon-32.png', sizes: '32x32' },
+      { src: 'assets/img/icon-192.png', sizes: '192x192' },
+      { src: 'assets/img/icon-512.png', sizes: '512x512' },
+    ],
+    appleTouch: { src: 'assets/img/apple-touch-icon.png', sizes: '180x180' },
+  },
+  /** 分享封面（微信收藏 / QQ / Twitter 的方图，宽高在构建时自动读取） */
+  cover: 'assets/img/og-cover.png',
   /** 首页最多展示的文章数量 */
   latestCount: 10,
   /**

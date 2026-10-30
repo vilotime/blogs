@@ -17,8 +17,27 @@ const ROOT = path.resolve(__dirname, '..');
 
 /** 样式/脚本的版本号（内容哈希），用来给 <link>/<script> 加 ?v=，避免浏览器缓存旧的 CSS */
 let assetVersion = { css: '', js: '' };
+/** 分享封面的真实尺寸（构建时从图片头里读出来，换图不用改数字） */
+let coverMeta = null;
 
-async function computeAssetVersion() {
+/** 读 PNG / JPEG 的文件头拿尺寸（不依赖任何图像库） */
+async function readImageMeta(relPath) {
+  if (!relPath) return null;
+  try {
+    const buf = await fs.readFile(path.join(ROOT, relPath));
+    if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47) {
+      return { type: 'image/png', width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+    }
+    if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
+      return { type: 'image/jpeg', width: 0, height: 0 };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function computeAssetMeta() {
   const digest = async (relPath) => {
     try {
       const buf = await fs.readFile(path.join(ROOT, relPath));
@@ -28,6 +47,7 @@ async function computeAssetVersion() {
     }
   };
   assetVersion = { css: await digest('assets/style.css'), js: await digest('assets/app.js') };
+  coverMeta = await readImageMeta(config.cover);
 }
 
 function argValue(flag) {
@@ -50,6 +70,7 @@ const GENERATED = [
   'tag',
   'post',
   'media',
+  'favicon.ico',
   // 兼容旧版本生成在根目录的单文件
   'categories.html',
   'archive.html',
@@ -230,23 +251,55 @@ function siteTagline() {
   return [config.title, config.subtitle].filter(Boolean).join(' · ');
 }
 
-/** 把站点内路径拼成绝对地址（微信/社交卡片要求 og:image 是绝对 URL） */
-function absoluteUrl(relPath) {
-  const base = String(config.siteUrl || '').trim().replace(/\/+$/, '');
-  if (!base || /example\.com/i.test(base)) return relPath;
-  return `${base}/${relPath}`;
+/** 站点地址是否配置成了完整 URL（微信/社交卡片的 og:image 必须是绝对地址） */
+function hasFullSiteUrl() {
+  return /^https?:\/\/\S+/i.test(String(config.siteUrl || '').trim()) && !/example\.com/i.test(String(config.siteUrl));
+}
+
+/** 站点图标 <link> 链（.ico 放最前兜底，其后是 svg 和多尺寸 png） */
+function iconTags(rel) {
+  const icons = config.icons || {};
+  const tags = [];
+  if (icons.ico) tags.push(`<link rel="icon" href="${rel}favicon.ico" sizes="any">`);
+  if (icons.svg) tags.push(`<link rel="icon" href="${rel}${icons.svg}" type="image/svg+xml">`);
+  for (const png of icons.png || []) {
+    tags.push(`<link rel="icon" href="${rel}${png.src}" type="image/png" sizes="${png.sizes}">`);
+  }
+  if (icons.appleTouch) {
+    tags.push(
+      `<link rel="apple-touch-icon" href="${rel}${icons.appleTouch.src}" sizes="${icons.appleTouch.sizes}">`,
+    );
+  }
+  return tags.join('\n');
+}
+
+/** 分享 / 微信收藏卡片：只输出绝对地址；没有配置完整 siteUrl 就干脆不输出，免得塞个抓不到的地址 */
+function ogImageTags() {
+  if (!hasFullSiteUrl() || !config.cover || !coverMeta) return '';
+  const url = `${String(config.siteUrl).trim().replace(/\/+$/, '')}/${config.cover}`;
+  const square = coverMeta.width > 0 && coverMeta.width === coverMeta.height;
+  const lines = [
+    `<meta property="og:image" content="${esc(url)}">`,
+    `<meta property="og:image:type" content="${coverMeta.type}">`,
+  ];
+  if (coverMeta.width > 0) {
+    lines.push(`<meta property="og:image:width" content="${coverMeta.width}">`);
+    lines.push(`<meta property="og:image:height" content="${coverMeta.height}">`);
+  }
+  lines.push(`<meta property="og:image:alt" content="${esc(config.title)}">`);
+  lines.push(`<meta name="twitter:card" content="${square ? 'summary' : 'summary_large_image'}">`);
+  lines.push(`<meta name="twitter:image" content="${esc(url)}">`);
+  return lines.join('\n');
 }
 
 function layout({ depth, title, description, active, activeCategory, bodyClass = '', content, sidebar }) {
   const rel = relFrom(depth);
   // 站点没有配置简介时，用「标题 · 小字」兜底
   const metaDescription = description || siteTagline();
-  // 微信收藏 / 分享卡片用的正方形封面（512×512）
-  // 配好 siteUrl 时是绝对地址（微信要求），否则退回相对路径
-  const coverUrl = absoluteUrl('assets/cover.png');
-  const ogImage = /^https?:/i.test(coverUrl) ? coverUrl : `${rel}assets/cover.png`;
   const cssUrl = `${rel}assets/style.css${assetVersion.css ? `?v=${assetVersion.css}` : ''}`;
   const jsUrl = `${rel}assets/app.js${assetVersion.js ? `?v=${assetVersion.js}` : ''}`;
+  const ogTags = ogImageTags();
+  const twitterCardFallback = ogTags ? '' : `<meta name="twitter:card" content="summary">\n`;
   return `<!DOCTYPE html>
 <html lang="${config.lang}">
 <head>
@@ -261,16 +314,10 @@ function layout({ depth, title, description, active, activeCategory, bodyClass =
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(metaDescription)}">
 <meta property="og:type" content="${active === 'post' ? 'article' : 'website'}">
-<meta property="og:image" content="${esc(ogImage)}">
-<meta property="og:image:type" content="image/png">
-<meta property="og:image:width" content="512">
-<meta property="og:image:height" content="512">
-<meta property="og:image:alt" content="${esc(config.title)}">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="${esc(title)}">
+${ogTags}
+${twitterCardFallback}<meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(metaDescription)}">
-<meta name="twitter:image" content="${esc(ogImage)}">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📔</text></svg>">
+${iconTags(rel)}
 <link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${rel}pages/feed.xml">
 <link rel="stylesheet" href="${cssUrl}">
 <script>
@@ -764,7 +811,7 @@ export async function main() {
   const started = Date.now();
   await cleanOutput();
   await fs.mkdir(OUT, { recursive: true });
-  await computeAssetVersion();
+  await computeAssetMeta();
 
   const { articles, categories, columns, tags } = loadContent(ROOT, { columnRoot: config.columnRoot });
   siteColumns = columns;
@@ -810,6 +857,19 @@ export async function main() {
   if (!OUT_IS_ROOT) await copyDir(path.join(ROOT, 'assets'), path.join(OUT, 'assets'));
   const mediaCount = await copyMedia(ROOT);
 
+  // 图标：favicon.ico 必须落在站点根目录（爬虫只请求 /favicon.ico）
+  let iconNote = '';
+  const icoSource = config.icons && config.icons.ico ? path.join(ROOT, config.icons.ico) : null;
+  if (icoSource) {
+    const icoStat = await fs.stat(icoSource).catch(() => null);
+    if (icoStat) {
+      await fs.copyFile(icoSource, path.join(OUT, 'favicon.ico'));
+      iconNote = 'favicon.ico 已放到站点根目录';
+    } else {
+      iconNote = `× 找不到 ${config.icons.ico}（先跑 node scripts/make-icons.mjs）`;
+    }
+  }
+
   // 关闭 Jekyll 处理（若部署到 GitHub Pages）
   await fs.writeFile(path.join(OUT, '.nojekyll'), '', 'utf8');
 
@@ -821,10 +881,11 @@ export async function main() {
   );
   console.log(`  附件 ${mediaCount} 个 · 输出目录 ${outLabel}`);
   console.log(`  首页（最新 ${Math.min(config.latestCount, articles.length)} 篇）：${path.relative(ROOT, path.join(OUT, 'index.html')) || 'index.html'}`);
+  if (iconNote) console.log(`  图标：${iconNote}`);
   if (!articles.length) console.log('  提示：article/ 下还没有文章。');
-  if (!config.siteUrl || /example\.com/i.test(String(config.siteUrl))) {
+  if (!hasFullSiteUrl()) {
     console.log(
-      '  提示：site.config.mjs 的 siteUrl 还是示例地址。微信收藏封面（og:image）和 RSS 里的文章链接需要绝对地址，\n' +
+      '  提示：site.config.mjs 的 siteUrl 还是示例地址 —— 分享封面（og:image）会被跳过，RSS 里的文章链接也不会是绝对地址。\n' +
         '        填成你的站点地址（如 https://<用户名>.github.io/<仓库名>）即可。',
     );
   }

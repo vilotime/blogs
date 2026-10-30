@@ -84,6 +84,40 @@ for (const file of htmlFiles) {
 
 console.log(`\n检查 ${htmlFiles.length} 个页面、${checked} 个链接/资源引用`);
 
+/* ---------- 图标 / 分享封面自检（规则见 docs/cover-and-icons.md） ---------- */
+const iconProblems = [];
+const icoPath = path.join(SITE, 'favicon.ico');
+if (config.icons && config.icons.ico) {
+  if (!fs.existsSync(icoPath)) {
+    iconProblems.push('站点根目录缺少 favicon.ico（Google/Bing 会退回托管域名的图标）');
+  } else {
+    const buf = fs.readFileSync(icoPath);
+    const magic = buf.length >= 6 && buf.readUInt16LE(0) === 0 && buf.readUInt16LE(2) === 1;
+    if (!magic) iconProblems.push('favicon.ico 不是合法 ICO（像是改了扩展名的 PNG）');
+  }
+}
+for (const png of (config.icons && config.icons.png) || []) {
+  const full = path.join(SITE, png.src);
+  if (!fs.existsSync(full)) {
+    iconProblems.push(`缺少图标 ${png.src}`);
+    continue;
+  }
+  const buf = fs.readFileSync(full);
+  if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47) {
+    const real = `${buf.readUInt32BE(16)}x${buf.readUInt32BE(20)}`;
+    if (real !== png.sizes) iconProblems.push(`${png.src} 实际 ${real}，声明 ${png.sizes}`);
+  }
+}
+if (config.cover && fs.existsSync(path.join(SITE, config.cover))) {
+  const buf = fs.readFileSync(path.join(SITE, config.cover));
+  if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47) {
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    if (w !== h) iconProblems.push(`分享封面 ${config.cover} 是 ${w}×${h}，不是方图（微信会裁掉两边）`);
+  }
+}
+if (iconProblems.length) problems.push(...iconProblems);
+
 // 统计信息
 const relOf = (file) => path.relative(SITE, file).split(path.sep);
 const postCount = htmlFiles.filter((file) => relOf(file)[0] === 'post').length;

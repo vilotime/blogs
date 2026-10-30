@@ -1,4 +1,4 @@
-# 依赖目录（本项目零依赖，通常不会出现）
+﻿# 依赖目录（本项目零依赖，通常不会出现）
 node_modules/
 
 # ---------- 构建产物：只在本地生成，不进仓库 ----------
@@ -12,6 +12,7 @@ node_modules/
 /post/
 /media/
 /.nojekyll
+/favicon.ico   # 构建时从 assets/favicon.ico 复制到站点根目录
 # 旧版本可能生成在根目录的单文件
 /categories.html
 /archive.html
