@@ -13,34 +13,40 @@
       <stop offset="60%" stop-color="#000000" stop-opacity="0"/>
       <stop offset="100%" stop-color="#000000" stop-opacity=".42"/>
     </radialGradient>
+    <!-- 和 favicon 一致的圆角：140/512 ≈ 27%，四角镂空（透明） -->
+    <clipPath id="round">
+      <rect width="512" height="512" rx="140" ry="140"/>
+    </clipPath>
   </defs>
 
-  <rect width="512" height="512" fill="url(#ink)"/>
-  <rect width="512" height="512" fill="url(#halo)"/>
+  <g clip-path="url(#round)">
+    <rect width="512" height="512" fill="url(#ink)"/>
+    <rect width="512" height="512" fill="url(#halo)"/>
 
-  <!-- 摊开的书页：朱砂描边 + 极淡的纸面 -->
-  <g transform="translate(0, 2)">
-    <path d="M256 172 C 214 148, 164 142, 126 152 L126 328 C 164 318, 214 324, 256 348 Z"
-          fill="#ffffff" fill-opacity="0.045" stroke="#d98b5f" stroke-width="8" stroke-linejoin="round"/>
-    <path d="M256 172 C 298 148, 348 142, 386 152 L386 328 C 348 318, 298 324, 256 348 Z"
-          fill="#ffffff" fill-opacity="0.045" stroke="#d98b5f" stroke-width="8" stroke-linejoin="round"/>
-    <path d="M256 172 L256 348" stroke="#d98b5f" stroke-width="8" stroke-linecap="round"/>
-    <g stroke="#f2efe9" stroke-opacity="0.16" stroke-width="5" stroke-linecap="round">
-      <path d="M154 204 H226"/>
-      <path d="M154 236 H212"/>
-      <path d="M154 268 H226"/>
-      <path d="M286 204 H358"/>
-      <path d="M286 236 H344"/>
-      <path d="M286 268 H358"/>
+    <!-- 摊开的书页：朱砂描边 + 极淡的纸面 -->
+    <g transform="translate(0, 2)">
+      <path d="M256 172 C 214 148, 164 142, 126 152 L126 328 C 164 318, 214 324, 256 348 Z"
+            fill="#ffffff" fill-opacity="0.045" stroke="#d98b5f" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M256 172 C 298 148, 348 142, 386 152 L386 328 C 348 318, 298 324, 256 348 Z"
+            fill="#ffffff" fill-opacity="0.045" stroke="#d98b5f" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M256 172 L256 348" stroke="#d98b5f" stroke-width="8" stroke-linecap="round"/>
+      <g stroke="#f2efe9" stroke-opacity="0.16" stroke-width="5" stroke-linecap="round">
+        <path d="M154 204 H226"/>
+        <path d="M154 236 H212"/>
+        <path d="M154 268 H226"/>
+        <path d="M286 204 H358"/>
+        <path d="M286 236 H344"/>
+        <path d="M286 268 H358"/>
+      </g>
     </g>
-  </g>
 
-  <rect width="512" height="512" fill="url(#vignette)"/>
+    <rect width="512" height="512" fill="url(#vignette)"/>
 
-  <!-- 站名 -->
-  <g font-family="Microsoft YaHei, PingFang SC, Segoe UI, system-ui, sans-serif" text-anchor="middle">
-    <text x="256" y="420" font-size="50" font-weight="600" letter-spacing="5" fill="#f2efe9">时光不语</text>
-    <rect x="216" y="441" width="80" height="3" rx="1.5" fill="#d98b5f" fill-opacity="0.65"/>
-    <text x="256" y="476" font-size="21" letter-spacing="4" fill="#8a909c">@vilotime</text>
+    <!-- 站名 -->
+    <g font-family="Microsoft YaHei, PingFang SC, Segoe UI, system-ui, sans-serif" text-anchor="middle">
+      <text x="256" y="420" font-size="50" font-weight="600" letter-spacing="5" fill="#f2efe9">时光不语</text>
+      <rect x="216" y="441" width="80" height="3" rx="1.5" fill="#d98b5f" fill-opacity="0.65"/>
+      <text x="256" y="476" font-size="21" letter-spacing="4" fill="#8a909c">@vilotime</text>
+    </g>
   </g>
 </svg>
