@@ -92,6 +92,8 @@ html {
   /* 隐藏浏览器默认滚动条（顶部已有阅读进度条提示位置） */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* 移动端：全局去掉"点击变蓝"的原生高亮（该属性可继承，会作用到所有元素） */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Chromium / Safari：整页滚动条不占位、不显示；滚动本身不受影响 */
@@ -175,6 +177,9 @@ samp {
   padding: 26px 20px 22px;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg-soft) 55%, var(--bg));
+  /* 移动端：点链接不要出现文字选中（蓝色）高亮 */
+  -webkit-user-select: none;
+  user-select: none;
   /* 隐藏滚动条，但仍可滚动 */
   scrollbar-width: none;
   -ms-overflow-style: none;
