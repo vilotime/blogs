@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 静态站点生成器：把 article/ 下的 Markdown 文章编译成静态站点
  * 输出目录优先级：命令行 --out <dir> > 环境变量 BLOG_OUTPUT > site.config.mjs 的 outputDir > '.'
  *   - 本地：node scripts/build.mjs                  → 生成到项目根目录（index.html 在根目录）
@@ -19,6 +19,27 @@ const ROOT = path.resolve(__dirname, '..');
 let assetVersion = { css: '', js: '' };
 /** 分享封面的真实尺寸（构建时从图片头里读出来，换图不用改数字） */
 let coverMeta = null;
+/** favicon.ico 内部自带的尺寸列表，用于 <link sizes="..."> 的精确声明 */
+let icoSizes = [];
+
+/** 读 ICO 目录，返回内部各图像尺寸（如 [16, 32, 48]） */
+async function readIcoSizes(relPath) {
+  if (!relPath) return [];
+  try {
+    const buf = await fs.readFile(path.join(ROOT, relPath));
+    if (buf.length < 6 || buf.readUInt16LE(0) !== 0 || buf.readUInt16LE(2) !== 1) return [];
+    const count = buf.readUInt16LE(4);
+    const sizes = [];
+    for (let i = 0; i < count; i += 1) {
+      const base = 6 + i * 16;
+      if (base + 2 > buf.length) break;
+      sizes.push(buf.readUInt8(base) || 256);
+    }
+    return [...new Set(sizes)].sort((a, b) => a - b);
+  } catch {
+    return [];
+  }
+}
 
 /** 读 PNG / JPEG 的文件头拿尺寸（不依赖任何图像库） */
 async function readImageMeta(relPath) {
@@ -48,6 +69,7 @@ async function computeAssetMeta() {
   };
   assetVersion = { css: await digest('assets/style.css'), js: await digest('assets/app.js') };
   coverMeta = await readImageMeta(config.cover);
+  icoSizes = await readIcoSizes(config.icons && config.icons.ico);
 }
 
 function argValue(flag) {
@@ -267,8 +289,14 @@ function absolutePageUrl(pagePath) {
 function iconTags(rel) {
   const icons = config.icons || {};
   const tags = [];
-  if (icons.ico) tags.push(`<link rel="icon" href="${rel}favicon.ico" sizes="any">`);
-  if (icons.svg) tags.push(`<link rel="icon" href="${rel}${icons.svg}" type="image/svg+xml">`);
+  // ICO 是位图，不能写 sizes="any"：写了浏览器会当成"任意尺寸"优先放大使用，
+  // 高分屏（平板/手机 DPR≥2）上就会糊。这里按 ICO 内部真实尺寸精确声明。
+  const icoSizesAttr = icoSizes.length
+    ? icoSizes.map((size) => `${size}x${size}`).join(' ')
+    : '16x16 32x32 48x48';
+  if (icons.ico) tags.push(`<link rel="icon" href="${rel}favicon.ico" sizes="${icoSizesAttr}">`);
+  // 矢量图标才是真正"任意尺寸"，只有它配 sizes="any"
+  if (icons.svg) tags.push(`<link rel="icon" href="${rel}${icons.svg}" type="image/svg+xml" sizes="any">`);
   for (const png of icons.png || []) {
     tags.push(`<link rel="icon" href="${rel}${png.src}" type="image/png" sizes="${png.sizes}">`);
   }
@@ -331,6 +359,8 @@ ${ogTags}
 ${twitterCardFallback}<meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(metaDescription)}">
 ${iconTags(rel)}
+<link rel="manifest" href="${rel}site.webmanifest">
+<meta name="theme-color" content="#b4453a">
 <link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${rel}pages/feed.xml">
 <link rel="stylesheet" href="${cssUrl}">
 <script>
@@ -880,6 +910,29 @@ export async function main() {
     await write(article.url, renderPost(article, { articles, categories, columns, tags }));
   }
   await write('pages/feed.xml', renderFeed(articles));
+
+  // Web App Manifest：让 Android / 鸿蒙 的"添加到主屏幕"用 192/512 的高清图标，
+  // 而不是去放大 favicon.ico（高分屏上会糊）
+  await write(
+    'site.webmanifest',
+    `${JSON.stringify(
+      {
+        name: config.title,
+        short_name: config.brand || config.title,
+        lang: config.lang,
+        start_url: './',
+        display: 'browser',
+        background_color: '#faf9f7',
+        theme_color: '#b4453a',
+        icons: [
+          { src: 'assets/img/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'assets/img/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+  );
 
   // 静态资源（输出到子目录时才需要复制；输出到根目录时 assets/ 原地使用）
   if (!OUT_IS_ROOT) await copyDir(path.join(ROOT, 'assets'), path.join(OUT, 'assets'));

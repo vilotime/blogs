@@ -1,10 +1,11 @@
-﻿# 依赖目录（本项目零依赖，通常不会出现）
+# 依赖目录（本项目零依赖，通常不会出现）
 node_modules/
 
 # ---------- 构建产物：只在本地生成，不进仓库 ----------
 # 全部用 / 开头，只匹配项目根目录，避免误伤 article/ 里同名的分类文件夹
 /dist/
 /index.html
+/site.webmanifest
 /pages/
 /category/
 /column/

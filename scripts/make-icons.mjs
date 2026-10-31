@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 图标工具：
  *   1. 校验 assets/img/ 下的图标文件（是否真的存在、PNG 实际尺寸和声明是否一致）
  *   2. 用 icon-16/32/48.png 组装出项目根目录的 favicon.ico（内含多个尺寸）
@@ -30,6 +30,9 @@ const ICO_SIZES = [
   { file: 'icon-16.png', size: 16 },
   { file: 'icon-32.png', size: 32 },
   { file: 'icon-48.png', size: 48 },
+  // 大尺寸也塞进 ICO：有些浏览器/系统只认 /favicon.ico、不读 <link> 和 manifest，
+  // 里面没有大图它们就会把 48 放大成桌面图标 / 主屏图标 —— 那就是「糊」的来源
+  { file: 'icon-192.png', size: 192 },
 ];
 
 /** 读 PNG 头，返回真实宽高 */
@@ -101,7 +104,7 @@ function main() {
     const ico = buildIco(entries);
     fs.writeFileSync(ICO_OUT, ico);
     rows.push(
-      `  assets/favicon.ico     ${ICO_SIZES.map((e) => e.size).join('/')} 多尺寸  ${(ico.length / 1024).toFixed(1)} KB`,
+      `  favicon.ico            ${ICO_SIZES.map((e) => e.size).join('/')} 多尺寸  ${(ico.length / 1024).toFixed(1)} KB`,
     );
   } else if (fs.existsSync(ICO_OUT)) {
     const buf = fs.readFileSync(ICO_OUT);

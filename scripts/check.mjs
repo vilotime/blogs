@@ -94,6 +94,37 @@ if (config.icons && config.icons.ico) {
     const buf = fs.readFileSync(icoPath);
     const magic = buf.length >= 6 && buf.readUInt16LE(0) === 0 && buf.readUInt16LE(2) === 1;
     if (!magic) iconProblems.push('favicon.ico 不是合法 ICO（像是改了扩展名的 PNG）');
+    else {
+      // <link sizes> 必须和 ICO 内部真实尺寸一致：写大了浏览器会把位图放大 → 高分屏上糊
+      const real = [];
+      for (let i = 0; i < buf.readUInt16LE(4); i += 1) {
+        const base = 6 + i * 16;
+        if (base + 16 > buf.length) break;
+        real.push(buf.readUInt8(base) || 256);
+      }
+      const declared = (
+        /<link rel="icon" href="[^"]*favicon\.ico" sizes="([^"]*)">/.exec(
+          fs.readFileSync(path.join(SITE, 'index.html'), 'utf8'),
+        ) || []
+      )[1];
+      const declaredList = (declared || '').split(/\s+/).filter(Boolean);
+      if (!declared) {
+        iconProblems.push('favicon.ico 的 <link> 缺少 sizes 声明');
+      } else if (declaredList.includes('any')) {
+        iconProblems.push('favicon.ico 不该用 sizes="any"（会让高分屏放大位图，图标变糊）');
+      } else {
+        const got = declaredList
+          .map((s) => Number(String(s).replace(/x\d+$/i, '')))
+          .sort((a, b) => a - b)
+          .join(',');
+        const want = real.slice().sort((a, b) => a - b).join(',');
+        if (got !== want) {
+          iconProblems.push(
+            `favicon.ico 声明 sizes="${declared}"，但文件里实际是 ${real.map((s) => `${s}x${s}`).join(' ')}`,
+          );
+        }
+      }
+    }
   }
 }
 for (const png of (config.icons && config.icons.png) || []) {
@@ -134,6 +165,36 @@ if (config.cover && fs.existsSync(path.join(SITE, config.cover))) {
   }
 }
 if (iconProblems.length) problems.push(...iconProblems);
+
+// Web App Manifest：Android / 平板的「添加到主屏幕」会用这里的图标
+const manifestPath = path.join(SITE, 'site.webmanifest');
+if (fs.existsSync(manifestPath)) {
+  let manifest = null;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    problems.push('site.webmanifest 不是合法 JSON');
+  }
+  if (manifest) {
+    if (manifest.start_url && /^[a-z]+:\/\//i.test(manifest.start_url)) {
+      problems.push(`site.webmanifest 的 start_url 用了绝对地址，子路径部署会跑偏：${manifest.start_url}`);
+    }
+    for (const icon of manifest.icons || []) {
+      const full = path.join(SITE, icon.src || '');
+      if (!icon.src || !fs.existsSync(full)) {
+        problems.push(`site.webmanifest 引用的图标不存在：${icon.src}`);
+        continue;
+      }
+      const buf = fs.readFileSync(full);
+      if (buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47) {
+        const real = `${buf.readUInt32BE(16)}x${buf.readUInt32BE(20)}`;
+        if (real !== icon.sizes) {
+          problems.push(`site.webmanifest 里 ${icon.src} 实际 ${real}，声明 ${icon.sizes}`);
+        }
+      }
+    }
+  }
+}
 
 // 统计信息
 const relOf = (file) => path.relative(SITE, file).split(path.sep);
