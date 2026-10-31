@@ -194,7 +194,58 @@ GitHub / Netlify 的小图标。
 
 ---
 
-## 5. 自检清单
+## 5. 装成 App（添加到主屏幕）
+
+想让手机 / 平板把站点「像 App 一样」放到主屏幕、点开是**独立窗口**（没有地址栏），
+光有图标不够，下面四样凑齐才行——缺一样，浏览器就只给一个普通书签快捷方式：
+
+| 要素 | 怎么给 | 说明 |
+| --- | --- | --- |
+| HTTPS | 部署在 https 上 | 本地 `localhost` 例外，可以直接调试 |
+| manifest | `<link rel="manifest" href="site.webmanifest">` | `display` **不能是 `browser`**，用 `standalone`（`minimal-ui`、`fullscreen` 也行） |
+| 图标 | manifest 里 ≥192 的图标，最好再加一张 `purpose: "maskable"` | 没有 maskable 时 Android 会自己加白底、把图标缩小塞进圆形里 |
+| Service Worker | 站点根目录一个 `sw.js`，并注册成功 | Chromium 系要求有 SW 才给「安装」，否则只是书签 |
+
+最小可用的 manifest：
+
+```json
+{
+  "name": "站点全名",
+  "short_name": "主屏上显示的名字",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf9f7",
+  "theme_color": "#b4453a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+```
+
+几个容易踩的点：
+
+- **`start_url` / `scope` 用 `./` 开头，别写 `/`**。子路径站点写 `/` 会跳到域名根，装上就是别人的首页。
+- **manifest 必须用 JSON 类型的 MIME**（`application/manifest+json` 或 `application/json`）。用静态服务器
+  本地预览时记得把 `.webmanifest` 映射上，不然 Chrome 报「manifest 解析失败」，线上却是好的。
+- **`sw.js` 必须放在站点根目录**：Service Worker 的作用域被文件位置锁死在「它所在目录及子目录」，
+  放 `assets/sw.js` 就管不到整站（除非服务器额外发 `Service-Worker-Allowed` 头）。
+- **maskable 图标要满版不透明**，字形留在中心直径 80% 的圆内（系统会自己套圆形 / 方圆 / 水滴遮罩）；
+  拿普通圆角图标冒充会被裁得很难看。
+- **iOS / iPadOS 不认 `display: standalone`**，它只认旧的一套：
+  `<meta name="apple-mobile-web-app-capable" content="yes">` + `apple-touch-icon` +
+  `apple-mobile-web-app-title`（主屏上那个名字）。
+- **SW 不要用「缓存优先」**：博客更新后读者会一直看到旧文章。用**网络优先 + 离线兜底**——
+  在线永远拿最新的，断网才回落到缓存。
+
+验证：桌面 Chrome / Edge 打开站点 → F12 → Application → Manifest（看有没有红色错误）→ Service Workers
+（看是不是 activated）；手机上是菜单里的「添加到主屏幕」，装好后打开**没有地址栏**，长按图标有快捷入口。
+
+---
+
+## 6. 自检清单
 
 - [ ] `<link rel="icon">` 指向的 ICO 能直接打开，返回的是图标（不是 404、不是 HTML）
 - [ ] 站点在子路径时，图标路径带上了子路径（或用了相对路径），没有写死域名根的 `/favicon.ico`
@@ -202,16 +253,19 @@ GitHub / Netlify 的小图标。
 - [ ] ICO 的 `sizes` 写的是文件内部真实尺寸（不是 `any`），PNG 的 `sizes` 与图片宽高一致
 - [ ] 高 DPR 设备（平板 / 手机）上标签页图标不糊 —— 糊就说明位图被放大了，回去查 `sizes`
 - [ ] 有 `site.webmanifest`，里面 192 / 512 图标路径能打开
+- [ ] manifest 的 `display` 不是 `browser`，且有一张 `purpose: maskable` 的图标
+- [ ] 站点根目录有 `sw.js`，DevTools → Application → Service Workers 里是 activated
 - [ ] 每个图标 URL 都能 200（F12 → Network 里筛 `icon` 看状态码）
 - [ ] `og:image` 是绝对地址，`https://` 开头且公网能直接打开
 - [ ] `og:image` 的实际宽高与 `og:image:width/height` 一致
 - [ ] `<title>`、`og:title`、`twitter:title` 是新标题，不是旧标题
 - [ ] 硬刷浏览器后标签页图标正常
 - [ ] 在社交平台里实际分享一次，标题和封面都对
+- [ ] 真机上「添加到主屏幕」装一次，打开是独立窗口、图标不糊、断网还能打开看过的页面
 
 ---
 
-## 6. 常见问题
+## 7. 常见问题
 
 **Q：只给 SVG 不行吗？**
 对现代浏览器可以，对搜索引擎不行。Bing 明确不支持 SVG favicon，且很多爬虫只请求
@@ -228,9 +282,14 @@ GitHub / Netlify 的小图标。
 不会。图标（favicon）和封面（og:image）是两套完全独立的东西。
 
 **Q：需要 web app manifest 吗？**
-不做 PWA 也建议放一个（几行 JSON）：Android / 平板浏览器在「添加到主屏幕」和桌面快捷方式里
-优先用 manifest 的 192 / 512 图标，比 ICO 清晰得多。和搜索引擎缩略图无关。
+想装成 App（独立窗口、主屏图标）就要，见第 5 节；不做 PWA 也建议放一个（几行 JSON）：
+Android / 平板浏览器在「添加到主屏幕」和桌面快捷方式里优先用 manifest 的 192 / 512 图标，
+比 ICO 清晰得多。和搜索引擎缩略图无关。
 注意 manifest 里的 `icons.src` 是**相对 manifest 文件自身**解析的，`start_url: "./"` 也是同样相对它。
+
+**Q：装了 Service Worker 会不会导致读者看不到新文章？**
+取决于策略。用「缓存优先」会；用**网络优先 + 离线兜底**不会（每次先问网络，只有断网才用缓存）。
+这是本文推荐的写法。
 
 **Q：ICO 里的图像用什么格式？**
 现代浏览器和搜索引擎都支持「ICO 容器 + 内部各尺寸 PNG」，用脚本从已有的 PNG 拼一个多尺寸
@@ -249,6 +308,7 @@ ICO 即可（16/32/48 再加一个 192 就够），不用自己写 BMP 编码。
    | `favicon.ico` | 内含 16/32/48 + 一个 192 | 放**站点根目录** |
    | `icon-16.png` / `icon-32.png` | 16 / 32 | 标签页 |
    | `icon-192.png` / `icon-512.png` | 192 / 512 | Android / PWA / 富摘要 |
+   | `icon-maskable-512.png` | 512，**满版不透明** | Android 自适应图标（`purpose: maskable`） |
    | `apple-touch-icon.png` | 180 | iOS 主屏，**不透明满版** |
    | `cover.png`（名字随意） | 800×800 方图 | 分享封面，也可另出 1200×630 宽图 |
 
@@ -260,7 +320,10 @@ ICO 即可（16/32/48 再加一个 192 就够），不用自己写 BMP 编码。
    图标文件是否存在、`sizes` 与图片真实宽高是否一致、`og:image` 是不是绝对地址、
    封面是不是方图。这几项出错时直接让构建失败，比部署完再发现好得多。
 
-4. **发布后验证**：按第 4、5 节做一遍——先确认线上 `/favicon.ico` 能打开，
+4. **发布后验证**：按第 4、6 节做一遍——先确认线上 `/favicon.ico` 能打开，
    再硬刷浏览器看标签页，最后在社交平台实际分享一次。
+
+5. **（可选）装成 App**：想要「添加到主屏幕、独立窗口打开」，再补三样——`site.webmanifest`
+   （`display: standalone`）、一张 maskable 图标、站点根目录的 `sw.js`，见第 5 节。
 
 > 具体到某个项目用哪个配置文件、跑哪条命令，看那个项目自己的 README——本文只讲通用规则。

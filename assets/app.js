@@ -266,6 +266,27 @@
     });
   }
 
+  // 注册 Service Worker：站点"添加到主屏幕"后能以独立窗口打开（离线也还能看）
+  // sw.js 必须在站点根目录，它的地址由本脚本自己的 URL 反推（各层页面深度不同）
+  var SELF_SCRIPT = document.currentScript;
+
+  function setupServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+    if (location.protocol !== 'https:' && !local) return;
+    var swUrl;
+    try {
+      swUrl = SELF_SCRIPT && SELF_SCRIPT.src
+        ? new URL('../sw.js', SELF_SCRIPT.src)
+        : new URL('sw.js', location.href);
+    } catch (error) {
+      return;
+    }
+    navigator.serviceWorker.register(swUrl.href, { scope: new URL('./', swUrl).pathname }).catch(function () {
+      /* 注册失败不影响正常浏览 */
+    });
+  }
+
   function boot() {
     syncThemeLabel();
     setupDrawer();
@@ -273,6 +294,7 @@
     setupToc();
     setupScroll();
     enhance();
+    setupServiceWorker();
   }
 
   if (document.readyState === 'loading') {

@@ -24,6 +24,7 @@ const PNG_SIZES = [
   { file: 'icon-32.png', size: 32 },
   { file: 'icon-192.png', size: 192 },
   { file: 'icon-512.png', size: 512 },
+  { file: 'icon-maskable-512.png', size: 512 },
   { file: 'apple-touch-icon.png', size: 180 },
 ];
 const ICO_SIZES = [
@@ -40,7 +41,13 @@ function pngSize(file) {
   const buf = fs.readFileSync(file);
   const isPng = buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47;
   if (!isPng) throw new Error(`${path.basename(file)} 不是 PNG 文件`);
-  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20), bytes: buf.length };
+  return {
+    width: buf.readUInt32BE(16),
+    height: buf.readUInt32BE(20),
+    bytes: buf.length,
+    // IHDR 第 9 个字节：0 灰度 / 2 真彩 / 3 索引 / 4 灰度+alpha / 6 真彩+alpha
+    colorType: buf[25],
+  };
 }
 
 /** 拼一个多尺寸 ICO（每个尺寸用 PNG 数据，浏览器/爬虫都认） */
@@ -85,6 +92,10 @@ function main() {
     const info = pngSize(full);
     const ok = info.width === size && info.height === size;
     if (!ok) problems.push(`${file} 实际是 ${info.width}×${info.height}，应该是 ${size}×${size}`);
+    // maskable 图标必须"满版"：带 alpha 通道就说明四角/边缘是透明的，套遮罩后会露底
+    if (/maskable/.test(file) && (info.colorType === 4 || info.colorType === 6)) {
+      problems.push(`${file} 带 alpha 通道，maskable 图标应该是不透明的满版图（导出时别留透明）`);
+    }
     rows.push(`  ${file.padEnd(22)} ${info.width}×${info.height}  ${(info.bytes / 1024).toFixed(1)} KB`);
   }
 

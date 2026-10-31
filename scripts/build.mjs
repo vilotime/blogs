@@ -361,6 +361,12 @@ ${twitterCardFallback}<meta name="twitter:title" content="${esc(title)}">
 ${iconTags(rel)}
 <link rel="manifest" href="${rel}site.webmanifest">
 <meta name="theme-color" content="#b4453a">
+<!-- Android / 鸿蒙：允许"添加到主屏幕"后以独立窗口打开 -->
+<meta name="mobile-web-app-capable" content="yes">
+<!-- iOS / iPadOS：同上（苹果只认这一套旧 meta + apple-touch-icon） -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="${esc(config.brand || config.title)}">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${rel}pages/feed.xml">
 <link rel="stylesheet" href="${cssUrl}">
 <script>
@@ -911,22 +917,39 @@ export async function main() {
   }
   await write('pages/feed.xml', renderFeed(articles));
 
-  // Web App Manifest：让 Android / 鸿蒙 的"添加到主屏幕"用 192/512 的高清图标，
-  // 而不是去放大 favicon.ico（高分屏上会糊）
+  // Web App Manifest：让 Android / 鸿蒙 / 平板把站点"添加到主屏幕"后像 App 一样
+  // 独立窗口打开（而不是浏览器标签页），图标用 192/512 的高清图而不是放大 favicon.ico
   await write(
     'site.webmanifest',
     `${JSON.stringify(
       {
+        id: './',
         name: config.title,
         short_name: config.brand || config.title,
+        description: siteTagline(),
         lang: config.lang,
+        dir: 'ltr',
         start_url: './',
-        display: 'browser',
+        scope: './',
+        display: 'standalone',
         background_color: '#faf9f7',
         theme_color: '#b4453a',
+        categories: ['blog'],
         icons: [
           { src: 'assets/img/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'assets/img/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          // maskable = 满版不透明 + 字形在中心 80% 安全区内，Android 会自己套圆形/方圆遮罩
+          {
+            src: 'assets/img/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+        // Android 上长按主屏图标弹出的快捷入口
+        shortcuts: [
+          { name: '分类', url: './pages/categories.html' },
+          { name: '归档', url: './pages/archive.html' },
         ],
       },
       null,
@@ -955,6 +978,14 @@ export async function main() {
     }
   }
 
+  // Service Worker 必须待在站点根目录（它的作用域被文件位置限制在它所在目录及子目录），
+  // 源码就在项目根的 sw.js；输出到子目录时复制过去
+  const swSource = path.join(ROOT, 'sw.js');
+  const swDest = path.join(OUT, 'sw.js');
+  if (path.resolve(swSource) !== path.resolve(swDest)) {
+    await fs.copyFile(swSource, swDest);
+  }
+
   // 关闭 Jekyll 处理（若部署到 GitHub Pages）
   await fs.writeFile(path.join(OUT, '.nojekyll'), '', 'utf8');
 
@@ -967,6 +998,7 @@ export async function main() {
   console.log(`  附件 ${mediaCount} 个 · 输出目录 ${outLabel}`);
   console.log(`  首页（最新 ${Math.min(config.latestCount, articles.length)} 篇）：${path.relative(ROOT, path.join(OUT, 'index.html')) || 'index.html'}`);
   if (iconNote) console.log(`  图标：${iconNote}`);
+  console.log('  添加到主屏幕：site.webmanifest（standalone）+ sw.js（网络优先，离线可看）');
   if (!articles.length) console.log('  提示：article/ 下还没有文章。');
   if (!hasFullSiteUrl()) {
     console.log(

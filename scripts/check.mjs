@@ -179,7 +179,18 @@ if (fs.existsSync(manifestPath)) {
     if (manifest.start_url && /^[a-z]+:\/\//i.test(manifest.start_url)) {
       problems.push(`site.webmanifest 的 start_url 用了绝对地址，子路径部署会跑偏：${manifest.start_url}`);
     }
-    for (const icon of manifest.icons || []) {
+    // 想「像 App 一样」从主屏打开，display 不能是 browser
+    if (!manifest.display || manifest.display === 'browser') {
+      problems.push('site.webmanifest 的 display 是 browser —— 从主屏打开还是浏览器标签页，不是独立窗口');
+    }
+    const icons = manifest.icons || [];
+    if (!icons.some((icon) => Number(String(icon.sizes || '').replace(/x\d+$/i, '')) >= 192)) {
+      problems.push('site.webmanifest 缺少 ≥192 的图标（Chromium 不给装）');
+    }
+    if (!icons.some((icon) => String(icon.purpose || '').includes('maskable'))) {
+      problems.push('site.webmanifest 缺少 purpose: maskable 的图标（Android 桌面图标会被裁得难看）');
+    }
+    for (const icon of icons) {
       const full = path.join(SITE, icon.src || '');
       if (!icon.src || !fs.existsSync(full)) {
         problems.push(`site.webmanifest 引用的图标不存在：${icon.src}`);
@@ -191,6 +202,17 @@ if (fs.existsSync(manifestPath)) {
         if (real !== icon.sizes) {
           problems.push(`site.webmanifest 里 ${icon.src} 实际 ${real}，声明 ${icon.sizes}`);
         }
+      }
+    }
+    // 装了 SW，Chromium 才会给「安装/添加到主屏幕」的独立窗口
+    if (!fs.existsSync(path.join(SITE, 'sw.js'))) {
+      problems.push('站点根目录缺少 sw.js（没有 Service Worker 就装不成 App，只能加书签）');
+    }
+    // 子路径部署时 scope/start_url 必须相对 manifest 自身，不能写域名根
+    for (const key of ['start_url', 'scope', 'id']) {
+      const value = manifest[key];
+      if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')) {
+        problems.push(`site.webmanifest 的 ${key} 写成了根路径 ${value}，子路径部署会跑偏（用 ./ 开头）`);
       }
     }
   }

@@ -55,10 +55,12 @@ blogs/
 ├── docs/               # 说明文档（图标与封面的规则）
 ├── .github/            # GitHub Actions 自动部署工作流
 ├── site.config.mjs     # ⚙️ 站点配置：标题、作者、导航、站点地址等
+├── favicon.ico         # 站点图标（必须放根目录）
+├── sw.js               # Service Worker（装成 App + 离线缓存）
 ├── package.json  README.md  .gitignore
 │
 └── 构建产物（不提交，npm run build 时生成）：
-    index.html、pages/、category/、column/、post/、tag/、media/、site.webmanifest、favicon.ico、.nojekyll
+    index.html、pages/、category/、column/、post/、tag/、media/、site.webmanifest、favicon.ico、sw.js、.nojekyll
 ```
 
 > 生成物只在构建时出现，已在 `.gitignore` 中排除；`npm run clean` 可一键清掉。
@@ -188,7 +190,8 @@ const config = {
 | 站点图标 | 根目录的 **`favicon.ico`**（源码就在这里）+ `assets/img/favicon.svg`（矢量源）+ `icon-16/32/192/512.png` + `apple-touch-icon.png` | 子路径站点必须显式写 `<link rel="icon">`，不能指望自动探测——自动探测打的是域名根，GitHub Pages 项目站上那是 `用户名.github.io` 的图标 |
 | 分享封面 | `assets/img/og-cover.png`（800×800 方图，源文件 `cover.svg`） | 微信收藏 / QQ / Twitter 卡片用它；宽高由构建脚本从 PNG 头里读出来，换图不用改数字 |
 | 重新生成图标 | `node scripts/make-icons.mjs` | 用 `icon-16/32/48/192.png` 组装根目录的 `favicon.ico` 并校验所有图标尺寸；加 `--check` 只校验 |
-| Web App Manifest | 构建生成的 `site.webmanifest` | 声明 192 / 512 两个图标，Android / 鸿蒙「添加到主屏幕」用它们，而不是放大 `favicon.ico` |
+| Web App Manifest | 构建生成的 `site.webmanifest` | 声明 192 / 512 + 一张 maskable 图标，`display: standalone`——装到主屏后是独立窗口，而不是浏览器标签页 |
+| Service Worker | 根目录的 **`sw.js`**（源码就在这里，构建时复制到站点根） | 浏览器要有它才肯给「安装」；顺带让看过的页面断网也能打开 |
 
 构建时的行为（对应文档里的几条要求）：
 
@@ -196,7 +199,19 @@ const config = {
 - 方图自动配 `twitter:card=summary`（不是方图会自动切成 `summary_large_image`）；
 - 图标按 `.ico` → `svg` → 多尺寸 `png` → `apple-touch-icon` 的顺序输出 `<link>` 链；
 - `.ico` 那条 `<link>` 的 `sizes` 是**从 `favicon.ico` 内部目录里读出来的真实尺寸**（`16 32 48 192`），写 `any` 会让高分屏把位图放大、图标变糊；
-- `node scripts/check.mjs` 会顺带校验：根目录有没有 `favicon.ico`、是不是**真的 ICO**、`sizes` 声明和 ICO 内部尺寸是否一致、PNG 的 `sizes` 和真实尺寸是否一致、manifest 里的图标是否存在且尺寸正确、封面是不是方图。
+- `node scripts/check.mjs` 会顺带校验：根目录有没有 `favicon.ico`、是不是**真的 ICO**、`sizes` 声明和 ICO 内部尺寸是否一致、PNG 的 `sizes` 和真实尺寸是否一致、manifest 里的图标是否存在且尺寸正确、`display` 是不是 `standalone`、有没有 maskable 图标、站点根有没有 `sw.js`、封面是不是方图。
+
+### 装成 App（添加到主屏幕）
+
+手机 / 平板打开站点 → 浏览器菜单里的「添加到主屏幕 / 安装应用」→ 桌面上多一个图标，
+点开是**独立窗口**（没有地址栏），长按图标有「分类」「归档」快捷入口。
+
+- 名字取 `site.config.mjs` 的 `title`，短名字取 `brand`；
+- 图标用 manifest 里的 192 / 512，Android 用那张满版不透明的 maskable（系统会自己套圆形/方圆遮罩）；
+- 离线：Service Worker 是**网络优先**，在线永远拿最新文章，断网才回落到缓存——看过的页面能打开，
+  首页有装 SW 时存下的外壳，完全没看过的页面显示一个说明页；
+- 换了图标或改了 `sw.js` 想立刻生效，把 `sw.js` 顶部的 `CACHE` 版本号改一下（`blog-v1` → `blog-v2`），
+  旧缓存会在下次激活时清掉。
 
 小功能：
 

@@ -11,6 +11,9 @@ on:
       - 'scripts/**'
       - 'site.config.mjs'
       - 'package.json'
+      - 'sw.js'
+      - 'favicon.ico'
+      - 'docs/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
