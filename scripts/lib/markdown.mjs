@@ -325,7 +325,12 @@ function renderBlocks(text, ctx, options = {}) {
         buffer.push(lines[i].replace(/^\s{0,3}>\s?/, ''));
         i += 1;
       }
-      const inner = renderBlocks(buffer.join('\n'), ctx);
+      // 引用里的单个换行要保留成换行："> 第一行 / > 第二行" 在中文写作里就是两行，
+      // 不能像普通段落那样被折叠成空格（空行仍然分段，列表 / 代码等块级结构照常解析）
+      const inner = renderBlocks(buffer.join('\n'), ctx).replace(
+        /<p>([\s\S]*?)<\/p>/g,
+        (_match, body) => `<p>${body.replace(/\n/g, '<br>')}</p>`,
+      );
       blocks.push(`<blockquote>${inner}</blockquote>`);
       continue;
     }
