@@ -273,7 +273,7 @@ function renderSidebar({ rel, categories, columns = siteColumns, tags = [], arti
         </section>
         ${tagsBlock}
         <div class="side-foot">
-          <a href="${rel}pages/feed.xml">RSS 订阅</a>
+          <a href="${feedHref(rel)}">RSS 订阅</a>
         </div>
       </div>
     </aside>`;
@@ -288,6 +288,14 @@ function siteTagline() {
 /** 站点地址是否配置成了完整 URL（微信/社交卡片的 og:image 必须是绝对地址） */
 function hasFullSiteUrl() {
   return /^https?:\/\/\S+/i.test(String(config.siteUrl || '').trim()) && !/example\.com/i.test(String(config.siteUrl));
+}
+
+/**
+ * RSS 订阅地址（侧栏链接、<link rel="alternate">、feed 的自引用都用它）
+ * 配了完整 siteUrl 就输出绝对地址，否则退回相对路径，保证本地预览也能点
+ */
+function feedHref(rel) {
+  return absolutePageUrl('pages/feed.xml') || `${rel}pages/feed.xml`;
 }
 
 /** 页面绝对地址（用于 og:url）；siteUrl 未配成完整地址时返回空字符串 */
@@ -380,7 +388,7 @@ ${iconTags(rel)}
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="${esc(config.brand || config.title)}">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${rel}pages/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${feedHref(rel)}">
 <link rel="stylesheet" href="${cssUrl}">
 <script>
   (function () {
@@ -817,10 +825,11 @@ function renderFeed(articles) {
     )
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>${esc(config.title)}</title>
     <link>${config.siteUrl}</link>
+    <atom:link href="${feedHref('')}" rel="self" type="application/rss+xml"/>
     <description>${esc(siteTagline())}</description>
     <language>${config.lang}</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
