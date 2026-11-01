@@ -896,13 +896,16 @@ export async function main() {
   const { articles, categories, columns, tags } = loadContent(ROOT, { columnRoot: config.columnRoot });
   siteColumns = columns;
 
-  // 分类 / 专栏的最近更新时间文案
+  // 分类 / 专栏的「最近更新」文案：取日期最大的一篇，不依赖数组顺序
+  // （分类是新→旧、专栏是旧→新，写死 articles[0] 在专栏上会拿到最老的一篇）
+  const latestOf = (list) =>
+    list.reduce((best, article) => (!best || article.date > best.date ? article : best), null);
   for (const category of categories) {
-    const newest = category.articles[0];
+    const newest = latestOf(category.articles);
     category.latestText = newest ? newest.dateText : '';
   }
   for (const column of columns) {
-    const newest = column.articles[0];
+    const newest = latestOf(column.articles);
     column.latestText = newest ? newest.dateText : '';
   }
 
