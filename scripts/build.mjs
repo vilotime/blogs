@@ -165,8 +165,21 @@ function compactItem(article, rel) {
           </li>`;
 }
 
-/* ------------------------------------------------------------------ 边栏 */
+/**
+ * 专栏简介（article/<专栏>/Intro.txt 的原文）→ 安全的行内 HTML。
+ * 纯文本：换行原样保留（变成 <br>），不解析 Markdown —— 简介不是文章。
+ */
+function introInline(text) {
+  return esc(String(text || '').trim().replace(/\r\n?/g, '\n')).replace(/\n/g, '<br>');
+}
 
+/** 单行版简介（<meta description> / og:description 用）：折叠换行并截断 */
+function introSummary(text, max = 120) {
+  const flat = String(text || '').replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+}
+
+/* ------------------------------------------------------------------ 边栏 */
 let siteColumns = [];
 function brandHtml(rel) {
   // 边栏品牌用短名字（config.brand），网页标题 / 微信标题用 config.title
@@ -397,6 +410,10 @@ ${iconTags(rel)}
 
 function renderIndex({ articles, categories, columns, tags }) {
   const latest = articles.slice(0, config.latestCount);
+  // 全站字数：中文按字、英文按词加起来（和每张卡片上的「约 N 分钟」同源），换算成「千字」
+  const totalWords = articles.reduce((sum, article) => sum + (article.words || 0), 0);
+  const totalWordsText = totalWords >= 1000 ? (totalWords / 1000).toFixed(1) : String(totalWords);
+  const totalWordsUnit = totalWords >= 1000 ? '千字' : '字';
   const cards =
     latest.map((article, i) => postCard(article, '', { index: i + 1 })).join('') ||
     '<p class="empty">还没有文章。把 Markdown 文件放进 <code>article/</code> 下（第一行写 <code># 标题</code>、文件名带日期），push 后会自动发布。</p>';
@@ -410,6 +427,7 @@ function renderIndex({ articles, categories, columns, tags }) {
       <span><strong>${categories.length}</strong> 个分类</span>
       ${columns.length ? `<span><strong>${columns.length}</strong> 个专栏</span>` : ''}
       ${tags.length ? `<span><strong>${tags.length}</strong> 个标签</span>` : ''}
+      <span><strong>${totalWordsText}</strong> ${totalWordsUnit}</span>
     </div>
     <div class="search-box">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -444,7 +462,7 @@ function renderCategories({ articles, categories, columns, tags }) {
           <h2><a href="../category/${category.slug}.html">${esc(category.name)}</a></h2>
           <span class="category-count">${category.articles.length} 篇</span>
         </header>
-        <p class="category-desc">${esc(category.description || '暂无描述')}</p>
+        ${category.intro ? `<p class="category-desc">${introInline(category.intro)}</p>` : ''}
         <ul class="compact-list">${latest}</ul>
         <a class="category-more" href="../category/${category.slug}.html">查看全部 →</a>
       </article>`;
@@ -454,7 +472,7 @@ function renderCategories({ articles, categories, columns, tags }) {
   const content = `
   <header class="page-head">
     <h1>分类</h1>
-    <p>共 ${categories.length} 个分类，按最近更新排序。</p>
+    <p>共 ${categories.length} 个分类，${categories.reduce((sum, category) => sum + category.articles.length, 0)} 篇文章。</p>
   </header>
   <section class="category-grid">${cards || '<p class="empty">暂无分类。</p>'}</section>`;
 
@@ -479,7 +497,7 @@ function renderCategory(category, { articles, categories, columns, tags }) {
   <header class="page-head">
     <nav class="breadcrumb"><a href="../index.html">首页</a><span>/</span><a href="../pages/categories.html">分类</a><span>/</span><b>${esc(category.name)}</b></nav>
     <h1>${esc(category.name)}</h1>
-    <p>${esc(category.description || `该分类下共 ${category.articles.length} 篇文章`)}</p>
+    ${category.intro ? `<p>${introInline(category.intro)}</p>` : ''}
     <div class="page-head-meta"><span>${category.articles.length} 篇文章</span><span class="dot"></span><span>最近更新 ${category.latestText || ''}</span></div>
   </header>
   <section class="cards">${list || '<p class="empty">该分类下还没有文章。</p>'}</section>`;
@@ -489,7 +507,7 @@ function renderCategory(category, { articles, categories, columns, tags }) {
     title: `${category.name} · ${config.title}`,
         pagePath: `category/${category.slug}.html`,
     tabTitle: `分类 · ${config.brand || "博客"}`,
-    description: category.description || `${category.name}分类下的全部文章`,
+    description: introSummary(category.intro) || `${category.name}分类下的全部文章`,
     active: 'categories',
     activeCategory: category.slug,
     content,
@@ -509,7 +527,7 @@ function renderColumns({ articles, categories, columns, tags }) {
           <h2><a href="../${column.url}">${esc(column.name)}</a></h2>
           <span class="category-count">${column.articles.length} 篇</span>
         </header>
-        <p class="category-desc">${esc(column.description || '暂无描述')}</p>
+        ${column.intro ? `<p class="category-desc">${introInline(column.intro)}</p>` : ''}
         <ul class="compact-list">${latest}</ul>
         <a class="category-more" href="../${column.url}">查看专栏 →</a>
       </article>`;
@@ -519,11 +537,11 @@ function renderColumns({ articles, categories, columns, tags }) {
   const content = `
   <header class="page-head">
     <h1>专栏</h1>
-    <p>共 ${columns.length} 个专栏。专栏可以跨分类，把同一主题的文章串成一条线。</p>
+    <p>共 ${columns.length} 个专栏，${columns.reduce((sum, column) => sum + column.articles.length, 0)} 篇文章。</p>
   </header>
   <section class="category-grid">${
     cards ||
-    '<p class="empty">还没有专栏。在 <code>article/_columns/</code> 下新建一个 Markdown 文件即可定义专栏。</p>'
+    `<p class="empty">还没有专栏。在 <code>article/${esc(config.columnRoot || '专栏')}/</code> 下建一个文件夹（文件夹名就是专栏名）并放几篇文章即可。</p>`
   }</section>`;
 
   return layout({
@@ -547,7 +565,7 @@ function renderColumn(column, { articles, categories, columns, tags }) {
   <header class="page-head">
     <nav class="breadcrumb"><a href="../index.html">首页</a><span>/</span><a href="../pages/columns.html">专栏</a><span>/</span><b>${esc(column.name)}</b></nav>
     <h1>${esc(column.name)} <span class="badge">专栏</span></h1>
-    <p>${esc(column.description || `该专栏共 ${column.articles.length} 篇文章`)}</p>
+    ${column.intro ? `<p>${introInline(column.intro)}</p>` : ''}
     <div class="page-head-meta"><span>${column.articles.length} 篇文章</span><span class="dot"></span><span>最近更新 ${column.latestText || ''}</span></div>
   </header>
   <section class="cards">${list || '<p class="empty">该专栏下还没有文章。</p>'}</section>`;
@@ -557,7 +575,7 @@ function renderColumn(column, { articles, categories, columns, tags }) {
     title: `${column.name} · ${config.title}`,
         pagePath: column.url,
     tabTitle: `专栏 · ${config.brand || "博客"}`,
-    description: column.description || `${column.name}专栏下的全部文章`,
+    description: introSummary(column.intro) || `${column.name}专栏下的全部文章`,
     active: 'columns',
     activeColumn: column.slug,
     content,

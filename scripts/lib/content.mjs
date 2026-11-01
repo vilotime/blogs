@@ -13,7 +13,11 @@
  *   - 摘要：正文开头若干字
  *
  * 其它可选约定（写了才生效，不写完全不影响）：
- *   - 分类 / 专栏文件夹里放 _index.md，可写 title / description / order 调整显示名、简介与边栏顺序
+ *   - 简介：分类 / 专栏文件夹里放一个 Intro.txt（纯文本，不用写任何格式），
+ *     article/<分类>/Intro.txt、article/<专栏容器>/<专栏>/Intro.txt
+ *     内容原样显示在对应的分类页 / 专栏页和总览卡片里；
+ *     没有这个文件就什么都不显示（不会自动填「共 N 篇」之类的占位文案）
+ *   - 分类 / 专栏文件夹里放 _index.md，可写 title / order 调整显示名与边栏顺序
  *   - 文章若要额外信息（tags、cover、description、draft…），也可以在开头写 YAML front-matter
  */
 import fs from 'node:fs';
@@ -71,6 +75,47 @@ function walkMarkdown(dir) {
   return result;
 }
 
+/**
+ * 文本解码：优先按 UTF-8（顺手去掉 BOM）；不是合法 UTF-8 就按 GBK 读
+ * —— Windows 记事本存成「ANSI」的中文文件就是 GBK，不然简介会变成乱码
+ */
+function decodeText(buffer) {
+  const bytes =
+    buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf
+      ? buffer.subarray(3)
+      : buffer;
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    try {
+      return new TextDecoder('gbk').decode(bytes);
+    } catch {
+      return bytes.toString('utf8');
+    }
+  }
+}
+
+/**
+ * 读专栏文件夹里的简介文件 Intro.txt（文件名大小写不敏感）。
+ * 没有这个文件就返回空字符串 —— 页面上也就什么都不显示。
+ * @param {string} dir 专栏文件夹（article/<专栏容器>/<专栏名>/）
+ */
+function readIntro(dir) {
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return '';
+  }
+  const hit = entries.find((entry) => entry.isFile() && /^intro\.txt$/i.test(entry.name));
+  if (!hit) return '';
+  try {
+    return decodeText(fs.readFileSync(path.join(dir, hit.name))).replace(/^\uFEFF/, '').trim();
+  } catch {
+    return '';
+  }
+}
+
 function normalizeDate(value, fallback) {
   if (!value) return fallback;
   const raw = Array.isArray(value) ? value[0] : String(value);
@@ -112,7 +157,8 @@ export function loadContent(projectRoot, options = {}) {
         slug: id,
         segments,
         name: segments.length ? segments.join(' / ') : '未分类',
-        description: '',
+        /** 分类文件夹里的 Intro.txt 内容（没有这个文件就是空字符串） */
+        intro: '',
         order: MAX,
         latest: new Date(0),
         articles: [],
@@ -132,7 +178,8 @@ export function loadContent(projectRoot, options = {}) {
         folder,
         name: folder,
         segments: [columnRoot, folder],
-        description: '',
+        /** 专栏文件夹里的 Intro.txt 内容（没有这个文件就是空字符串） */
+        intro: '',
         order: MAX,
         latest: new Date(0),
         articles: [],
@@ -158,14 +205,14 @@ export function loadContent(projectRoot, options = {}) {
       if (segments.length < 2) continue; // 专栏容器自身的 _index 暂不支持
       const column = getColumn(segments.slice(1));
       if (data.title) column.name = String(data.title);
-      if (data.description) column.description = String(data.description);
+      // 专栏简介只认 Intro.txt（见下面第 3 步），_index.md 里的 description 不再生效
       column.order = numberOr(data.order, column.order);
       continue;
     }
 
     const category = getCategory(segments);
     if (data.title) category.name = String(data.title);
-    if (data.description) category.description = String(data.description);
+    // 分类简介只认 Intro.txt（见下面第 3 步），_index.md 里的 description 不再生效
     category.order = numberOr(data.order, category.order);
   }
 
@@ -254,11 +301,22 @@ export function loadContent(projectRoot, options = {}) {
     articles.push(article);
   }
 
+  /* ---------- 3. 简介：<文件夹>/Intro.txt ---------- */
+  // 有就当成简介，没有就留空 —— 页面上不显示任何默认文案（不会自动填「共 N 篇」）
+  for (const column of columns.values()) {
+    column.intro = readIntro(path.join(articleRoot, columnRoot, column.folder));
+  }
+  for (const category of categories.values()) {
+    // 未分类（文章直接放在 article/ 下）没有自己的文件夹，也就没有简介
+    if (!category.segments.length) continue;
+    category.intro = readIntro(path.join(articleRoot, ...category.segments));
+  }
+
   const byDate = (a, b) => b.date - a.date || a.title.localeCompare(b.title, 'zh');
 
   articles.sort(byDate);
 
-  /* ---------- 3. 排序与上一篇 / 下一篇 ---------- */
+  /* ---------- 4. 排序与上一篇 / 下一篇 ---------- */
   // 分类：新文章在前
   const categoryList = [...categories.values()].filter((category) => category.articles.length > 0);
   for (const category of categoryList) {
@@ -284,7 +342,7 @@ export function loadContent(projectRoot, options = {}) {
   }
   columnList.sort((a, b) => a.order - b.order || b.latest - a.latest || a.name.localeCompare(b.name, 'zh'));
 
-  /* ---------- 4. 标签 ---------- */
+  /* ---------- 5. 标签 ---------- */
   const tagMap = new Map();
   for (const article of articles) {
     for (const tag of article.tags) {
