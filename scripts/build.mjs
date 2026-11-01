@@ -462,7 +462,6 @@ function renderCategories({ articles, categories, columns, tags }) {
           <h2><a href="../category/${category.slug}.html">${esc(category.name)}</a></h2>
           <span class="category-count">${category.articles.length} 篇</span>
         </header>
-        ${category.intro ? `<p class="category-desc">${introInline(category.intro)}</p>` : ''}
         <ul class="compact-list">${latest}</ul>
         <a class="category-more" href="../category/${category.slug}.html">查看全部 →</a>
       </article>`;
@@ -472,7 +471,7 @@ function renderCategories({ articles, categories, columns, tags }) {
   const content = `
   <header class="page-head">
     <h1>分类</h1>
-    <p>共 ${categories.length} 个分类，${categories.reduce((sum, category) => sum + category.articles.length, 0)} 篇文章。</p>
+    <p>共 ${categories.length} 个分类，${categories.reduce((sum, category) => sum + category.articles.length, 0)} 篇文章</p>
   </header>
   <section class="category-grid">${cards || '<p class="empty">暂无分类。</p>'}</section>`;
 
@@ -527,7 +526,6 @@ function renderColumns({ articles, categories, columns, tags }) {
           <h2><a href="../${column.url}">${esc(column.name)}</a></h2>
           <span class="category-count">${column.articles.length} 篇</span>
         </header>
-        ${column.intro ? `<p class="category-desc">${introInline(column.intro)}</p>` : ''}
         <ul class="compact-list">${latest}</ul>
         <a class="category-more" href="../${column.url}">查看专栏 →</a>
       </article>`;
@@ -537,7 +535,7 @@ function renderColumns({ articles, categories, columns, tags }) {
   const content = `
   <header class="page-head">
     <h1>专栏</h1>
-    <p>共 ${columns.length} 个专栏，${columns.reduce((sum, column) => sum + column.articles.length, 0)} 篇文章。</p>
+    <p>共 ${columns.length} 个专栏，${columns.reduce((sum, column) => sum + column.articles.length, 0)} 篇文章</p>
   </header>
   <section class="category-grid">${
     cards ||
@@ -619,7 +617,7 @@ function renderArchive({ articles, categories, tags }) {
   const content = `
   <header class="page-head">
     <h1>归档</h1>
-    <p>全部 ${articles.length} 篇文章，按时间倒序排列。</p>
+    <p>全部 ${articles.length} 篇文章，按时间倒序排列</p>
     <div class="chips chips-wrap">${yearNav}</div>
     <div class="search-box">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -651,7 +649,7 @@ function renderTags({ tags, articles, categories, columns }) {
   const content = `
   <header class="page-head">
     <h1>标签</h1>
-    <p>共 ${tags.length} 个标签，${articles.length} 篇文章。</p>
+    <p>共 ${tags.length} 个标签，${articles.length} 篇文章</p>
   </header>
   <section class="tag-cloud">${cloud}</section>`;
 
