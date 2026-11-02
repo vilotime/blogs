@@ -1,6 +1,35 @@
 /**
  * 站点配置：改这里就能定制整站
  */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * 站点地址优先从根目录的 url.txt 读取 —— 换域名时只改那一个文件就全站生效
+ * （RSS、og:url、分享封面、专栏/分类等所有绝对地址都跟着变）。
+ * 规则：跳过空行和 # 开头的注释行，取第一行；没写 https:// 会自动补上；
+ * 末尾多余的斜杠会去掉。文件不存在或没内容时，退回下面 siteUrl 的值。
+ */
+function readSiteUrlFile() {
+  try {
+    const raw = fs.readFileSync(path.join(ROOT, 'url.txt'), 'utf8').replace(/^\uFEFF/, '');
+    const line = raw
+      .split(/\r?\n/)
+      .map((text) => text.trim())
+      .find((text) => text && !text.startsWith('#'));
+    if (!line) return '';
+    const withScheme = /^https?:\/\//i.test(line) ? line : `https://${line}`;
+    return withScheme.replace(/\/+$/, '');
+  } catch {
+    return '';
+  }
+}
+
+const urlFromFile = readSiteUrlFile();
+
 const config = {
   /**
    * 站点标题：浏览器标签页、微信收藏 / 分享卡片（og:site_name、og:title）、RSS 都用它
@@ -15,8 +44,13 @@ const config = {
   author: 'Vilot',
   /** HTML lang */
   lang: 'zh-CN',
-  /** 部署后的站点地址（用于 RSS、分享封面；必须是完整地址，微信/社交卡片要绝对 URL） */
-  siteUrl: 'https://vilotime.cn/blogs',
+  /**
+   * 兜底站点地址：**只有** url.txt 不存在、或里面没写地址时才会用到
+   * （用于 RSS、分享封面；微信/社交卡片要求绝对 URL）
+   */
+  siteUrl: urlFromFile || 'https://vilotime.github.io/blogs',
+  /** 内部用：记录地址是从哪读来的（构建日志里会打印，不影响页面输出） */
+  siteUrlSource: urlFromFile ? 'url.txt' : 'site.config.mjs',
   /**
    * 站点图标（规则见 docs/cover-and-icons.md）
    * .ico 会在构建时复制到「站点根目录」的 /favicon.ico —— 搜索引擎只认这个路径，

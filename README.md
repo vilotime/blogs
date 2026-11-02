@@ -54,7 +54,8 @@ blogs/
 ├── scripts/            # 构建工具（生成站点 / 本地预览 / 自检 / 建文章）
 ├── docs/               # 说明文档（图标与封面的规则）
 ├── .github/            # GitHub Actions 自动部署工作流
-├── site.config.mjs     # ⚙️ 站点配置：标题、作者、导航、站点地址等
+├── site.config.mjs     # ⚙️ 站点配置：标题、作者、导航等
+├── url.txt             # 🌐 站点网址（改这一行就全站生效）
 ├── favicon.ico         # 站点图标（必须放根目录）
 ├── sw.js               # Service Worker（装成 App + 离线缓存）
 ├── package.json  README.md  .gitignore
@@ -174,7 +175,7 @@ const config = {
   brand: '博客',             // 边栏顶部显示的品牌名（站内用的短名字）
   subtitle: '@vilotime',     // 品牌名旁边那行小字
   author: 'Vilot',
-  siteUrl: 'https://example.com', // 部署地址；微信收藏封面（og:image）和 RSS 需要绝对地址，务必填真实域名
+  // 站点地址不在这里改：见下面「站点网址写在哪」
   latestCount: 10,          // 首页最多展示多少篇（默认 10）
   columnRoot: '专栏',        // 存放专栏的容器文件夹名（article/<columnRoot>/<专栏名>/）
   outputDir: '.',           // 输出目录：'.' = 根目录（默认）；CI 用 --out dist 覆盖
@@ -183,6 +184,19 @@ const config = {
 ```
 
 改样式改 `assets/style.css`（颜色变量集中在文件顶部 `:root` 与 `[data-theme="dark"]`，字体变量是 `--font-sans`），改交互改 `assets/app.js`。
+
+### 站点网址写在哪
+
+根目录的 **`url.txt`** 里写一行就够，改完全站生效：
+
+```text
+https://vilotime.cn/blogs
+```
+
+- 影响：RSS（频道地址、每条文章链接、feed 自引用）、侧栏「RSS 订阅」、`og:url`、`og:image` / `twitter:image`；
+- 容错：漏写 `https://` 会自动补、末尾多余的 `/` 会去掉、以 `#` 开头的行当注释跳过；
+- 若 `url.txt` 不存在或里面没写地址，默认用 `https://vilotime.github.io/blogs`（写在 `site.config.mjs` 的 `siteUrl`，一般不用动它）；
+- 构建日志最后一行会打印实际生效的地址和来源，例如 `站点地址：https://vilotime.cn/blogs（来自 url.txt）`，改了没生效一眼就能看出来。
 
 ### 图标与分享封面
 

@@ -1027,11 +1027,14 @@ export async function main() {
   console.log(`  首页（最新 ${Math.min(config.latestCount, articles.length)} 篇）：${path.relative(ROOT, path.join(OUT, 'index.html')) || 'index.html'}`);
   if (iconNote) console.log(`  图标：${iconNote}`);
   console.log('  添加到主屏幕：site.webmanifest（standalone）+ sw.js（网络优先，离线可看）');
+  console.log(
+    `  站点地址：${config.siteUrl}（来自 ${config.siteUrlSource || 'site.config.mjs'}）`,
+  );
   if (!articles.length) console.log('  提示：article/ 下还没有文章。');
   if (!hasFullSiteUrl()) {
     console.log(
-      '  提示：site.config.mjs 的 siteUrl 还是示例地址 —— 分享封面（og:image）会被跳过，RSS 里的文章链接也不会是绝对地址。\n' +
-        '        填成你的站点地址（如 https://<用户名>.github.io/<仓库名>）即可。',
+      '  提示：站点地址无效或还是示例地址 —— 分享封面（og:image）会被跳过，RSS 里的文章链接也不会是绝对地址。\n' +
+        '        改根目录的 url.txt（只写一行 https://你的域名/子路径）即可。',
     );
   }
 }
