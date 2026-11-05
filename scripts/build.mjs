@@ -418,10 +418,10 @@ ${iconTags(rel)}
 
 function renderIndex({ articles, categories, columns, tags }) {
   const latest = articles.slice(0, config.latestCount);
-  // 全站字数：中文按字、英文按词加起来（和每张卡片上的「约 N 分钟」同源），换算成「千字」
+  // 全站字数：中文按字、英文按词加起来（和每张卡片上的「约 N 分钟」同源），换算成「万字」
   const totalWords = articles.reduce((sum, article) => sum + (article.words || 0), 0);
-  const totalWordsText = totalWords >= 1000 ? (totalWords / 1000).toFixed(1) : String(totalWords);
-  const totalWordsUnit = totalWords >= 1000 ? '千字' : '字';
+  const totalWordsText = totalWords >= 10000 ? (totalWords / 10000).toFixed(1) : String(totalWords);
+  const totalWordsUnit = totalWords >= 10000 ? '万字' : '字';
   const cards =
     latest.map((article, i) => postCard(article, '', { index: i + 1 })).join('') ||
     '<p class="empty">还没有文章。把 Markdown 文件放进 <code>article/</code> 下（第一行写 <code># 标题</code>、文件名带日期），push 后会自动发布。</p>';
