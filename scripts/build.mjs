@@ -220,23 +220,41 @@ function renderSidebar({ rel, categories, columns = siteColumns, tags = [], arti
     .slice(0, 12)
     .map((tag) => `<a class="chip" href="${rel}tag/${tag.slug}.html">#${esc(tag.name)}</a>`)
     .join('');
-  const columnItems = columns
-    .map(
-      (column) => `
+
+  /** 一个专栏条目（首屏和「展开更多」里共用同一套标记） */
+  const columnItem = (column) => `
           <li${column.slug === activeColumn ? ' class="is-active"' : ''}>
             <a href="${rel}${column.url}">
               <span class="side-name">${esc(column.name)}</span>
               <span class="side-count">${column.articles.length}</span>
             </a>
-          </li>`,
-    )
-    .join('');
+          </li>`;
+  // 侧栏专栏默认只显示 config.sideColumnLimit 个，其余收进「展开更多」
+  const columnLimit =
+    Number.isFinite(Number(config.sideColumnLimit)) && Number(config.sideColumnLimit) > 0
+      ? Math.floor(Number(config.sideColumnLimit))
+      : 2;
+  const shownColumns = columns.slice(0, columnLimit);
+  const foldedColumns = columns.slice(columnLimit);
+  // 正在看的专栏如果被折进去了，就默认展开，免得用户在侧栏找不到自己所在的位置
+  const foldedIsActive = foldedColumns.some((column) => column.slug === activeColumn);
+  const columnItems = shownColumns.map(columnItem).join('');
+  const columnMore = foldedColumns.length
+    ? `
+          <details class="side-more"${foldedIsActive ? ' open' : ''}>
+            <summary>
+              <span class="more-open">展开更多（${foldedColumns.length}）</span>
+              <span class="more-close">收起</span>
+            </summary>
+            <ul class="side-list side-list-more">${foldedColumns.map(columnItem).join('')}</ul>
+          </details>`
+    : '';
 
   const columnsBlock = columns.length
     ? `
         <section class="side-block">
           <h2 class="side-title">专栏</h2>
-          <ul class="side-list">${columnItems}</ul>
+          <ul class="side-list">${columnItems}</ul>${columnMore}
         </section>`
     : '';
 

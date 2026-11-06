@@ -77,6 +77,11 @@ const config = {
    */
   columnRoot: '专栏',
   /**
+   * 侧栏「专栏」区块默认显示几个专栏，多出来的收进「展开更多」里
+   * 排序沿用专栏本身的顺序（先按 _index.md 的 order，再按最近更新）
+   */
+  sideColumnLimit: 2,
+  /**
    * 构建输出目录（相对项目根目录）
    * '.' = 生成到项目根目录，index.html 就在根目录（本地 npm run dev / npm run build 默认如此）；
    *       GitHub Actions 跑 `npm run build:dist`（等价 --out dist），把产物放进 dist/ 后再发布。
