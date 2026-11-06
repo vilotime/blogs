@@ -177,6 +177,8 @@ const config = {
   author: 'Vilot',
   // 站点地址不在这里改：见下面「站点网址写在哪」
   latestCount: 10,          // 首页最多展示多少篇（默认 10）
+  sideCategoryLimit: 2,     // 侧栏「分类」默认显示几个，其余收进「展开更多」
+  sideColumnLimit: 2,       // 侧栏「专栏」默认显示几个，其余收进「展开更多」
   columnRoot: '专栏',        // 存放专栏的容器文件夹名（article/<columnRoot>/<专栏名>/）
   outputDir: '.',           // 输出目录：'.' = 根目录（默认）；CI 用 --out dist 覆盖
   nav: [...],               // 边栏导航
