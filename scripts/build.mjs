@@ -222,9 +222,9 @@ function renderSidebar({ rel, categories, columns = siteColumns, tags = [], arti
   const columnItem = (column) =>
     sideListItem(column.url, column.name, column.articles.length, column.slug === activeColumn);
 
-  /** 读取侧栏折叠数量：配置写了正数就用它，否则默认 2 */
-  const limitOf = (value) =>
-    Number.isFinite(Number(value)) && Number(value) > 0 ? Math.floor(Number(value)) : 2;
+  /** 读取侧栏条数：配置写了正数就用它，否则用 fallback（默认 2） */
+  const limitOf = (value, fallback = 2) =>
+    Number.isFinite(Number(value)) && Number(value) > 0 ? Math.floor(Number(value)) : fallback;
 
   /**
    * 侧栏列表：最多显示 limit 条，其余收进「展开更多」
@@ -249,7 +249,10 @@ function renderSidebar({ rel, categories, columns = siteColumns, tags = [], arti
     };
   };
 
-  const recentItems = articles.slice(0, 5).map((article) => compactItem(article, rel)).join('');
+  const recentItems = articles
+    .slice(0, limitOf(config.sideRecentLimit, 4))
+    .map((article) => compactItem(article, rel))
+    .join('');
   const tagItems = tags
     .slice(0, 12)
     .map((tag) => `<a class="chip" href="${rel}tag/${tag.slug}.html">#${esc(tag.name)}</a>`)

@@ -82,6 +82,8 @@ const config = {
    */
   sideCategoryLimit: 2,
   sideColumnLimit: 2,
+  /** 侧栏「最近更新」显示几篇 */
+  sideRecentLimit: 4,
   /**
    * 构建输出目录（相对项目根目录）
    * '.' = 生成到项目根目录，index.html 就在根目录（本地 npm run dev / npm run build 默认如此）；
