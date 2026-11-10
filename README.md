@@ -1,6 +1,6 @@
-# 博客
+# 时光写作者
 
-一个**零依赖**的 Markdown 静态博客，为 **GitHub Pages** 设计：文章只写在 `article/` 里，push 之后 GitHub Actions 自动构建并发布；本地写完刷新浏览器就能看到效果。
+一个**零依赖**的 Markdown 静态站点，为 **GitHub Pages** 设计：文章只写在 `article/` 里，push 之后 GitHub Actions 自动构建并发布；本地写完刷新浏览器就能看到效果。
 
 - **只改 `article/`**：分类 = 文件夹名，专栏 = `article/专栏/<专栏名>/` 文件夹，专栏简介 = 该文件夹里的 `Intro.txt`，图片放文章同目录；不需要动任何其他文件
 - **改完直接生效**：本地开着 `npm run dev`，改完 Markdown 刷新页面即可（服务器会先比对改动时间再重建）；线上 push 即自动发布
@@ -171,8 +171,8 @@ article/
 
 ```js
 const config = {
-  title: '时光不语的博客',    // 网页标题 / 微信收藏标题 / RSS 用（首页标题=这一行，内页=「页面名 · 这一行」）
-  brand: '博客',             // 边栏顶部显示的品牌名（站内用的短名字）
+  title: '时光写作者',    // 网页标题 / 微信收藏标题 / RSS 用（首页标题=这一行，内页=「页面名 · 这一行」）
+  brand: '时光写作者',             // 边栏顶部显示的品牌名（站内用的短名字）
   subtitle: '@vilotime',     // 品牌名旁边那行小字
   author: 'Vilot',
   // 站点地址不在这里改：见下面「站点网址写在哪」
@@ -203,7 +203,7 @@ https://vilotime.cn/blogs
 
 ### 图标与分享封面
 
-规则细节见 **`docs/cover-and-icons.md`**，这里只记这套博客里的位置：
+规则细节见 **`docs/cover-and-icons.md`**，这里只记这套站点里的位置：
 
 | 东西 | 文件 | 说明 |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # 网站封面与图标指南
 
-一份**通用**说明：任何网站（静态站、博客、个人主页、文档站都算）都能照着做。
+一份**通用**说明：任何网站（静态站、个人主页、文档站都算）都能照着做。
 文中地址统一用 `https://example.com/` 举例，换成你自己的域名即可。
 
 站上一共有**三种长得像「图」**的东西，用途完全不同，别混在一起处理：
@@ -237,7 +237,7 @@ GitHub / Netlify 的小图标。
 - **iOS / iPadOS 不认 `display: standalone`**，它只认旧的一套：
   `<meta name="apple-mobile-web-app-capable" content="yes">` + `apple-touch-icon` +
   `apple-mobile-web-app-title`（主屏上那个名字）。
-- **SW 不要用「缓存优先」**：博客更新后读者会一直看到旧文章。用**网络优先 + 离线兜底**——
+- **SW 不要用「缓存优先」**：站点更新后读者会一直看到旧文章。用**网络优先 + 离线兜底**——
   在线永远拿最新的，断网才回落到缓存。
 
 验证：桌面 Chrome / Edge 打开站点 → F12 → Application → Manifest（看有没有红色错误）→ Service Workers
