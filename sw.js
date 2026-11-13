@@ -25,19 +25,15 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>离线 · 时光不语</title>
 <style>
-  html { color-scheme: light dark; }
+  html { color-scheme: dark; }
   body {
     margin: 0; min-height: 100vh; display: grid; place-items: center;
     font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
-    background: #faf9f7; color: #24292f; text-align: center; padding: 24px;
-  }
-  @media (prefers-color-scheme: dark) {
-    body { background: #15181d; color: #e6e6e6; }
+    background: #15181d; color: #e6e6e6; text-align: center; padding: 24px;
   }
   p { margin: 8px 0; line-height: 1.7; }
   .hint { opacity: .6; font-size: 14px; }
-  a { color: #b4453a; }
-  @media (prefers-color-scheme: dark) { a { color: #e8836f; } }
+  a { color: #e8836f; }
 </style>
 </head>
 <body>

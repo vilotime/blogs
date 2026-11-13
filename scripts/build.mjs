@@ -302,10 +302,6 @@ function renderSidebar({ rel, categories, columns = siteColumns, tags = [], arti
       </button>
       <div class="sidebar-bar">
         ${brandHtml(rel)}
-        <button class="icon-btn theme-toggle" type="button" data-theme-toggle aria-label="切换主题" title="切换主题">
-          <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        </button>
       </div>
       <div class="sidebar-panel" id="sidebarPanel">
         <nav class="side-nav" aria-label="主导航">${nav}</nav>
@@ -434,14 +430,6 @@ ${iconTags(rel)}
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="alternate" type="application/rss+xml" title="${esc(config.title)}" href="${feedHref(rel)}">
 <link rel="stylesheet" href="${cssUrl}">
-<script>
-  (function () {
-    try {
-      var saved = localStorage.getItem('blog-theme');
-      if (saved) document.documentElement.setAttribute('data-theme', saved);
-    } catch (e) {}
-  })();
-</script>
 </head>
 <body class="${bodyClass}">
 <div class="reading-progress" data-progress></div>

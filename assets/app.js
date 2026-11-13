@@ -1,6 +1,5 @@
 /* ============================================================
    时光写作者 · 前端交互（零依赖）
-   - 主题切换（记忆到 localStorage）
    - 移动端侧栏抽屉（点击展开 / 点击遮罩关闭）
    - 首页 / 归档搜索过滤
    - 代码块一键复制
@@ -9,45 +8,9 @@
 (function () {
   'use strict';
 
-  var THEME_KEY = 'blog-theme';
   var MOBILE_BREAKPOINT = 1080;
 
-  /* ---------------- 主题 ---------------- */
-  function currentTheme() {
-    var saved = null;
-    try {
-      saved = localStorage.getItem(THEME_KEY);
-    } catch (e) {}
-    if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-    } catch (e) {}
-    document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
-      btn.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题');
-      btn.setAttribute('title', theme === 'dark' ? '浅色模式' : '深色模式');
-    });
-  }
-
-  function syncThemeLabel() {
-    var theme = document.documentElement.getAttribute('data-theme') || currentTheme();
-    document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
-      btn.setAttribute('aria-label', theme === 'dark' ? '切换到浅色主题' : '切换到深色主题');
-      btn.setAttribute('title', theme === 'dark' ? '浅色模式' : '深色模式');
-    });
-  }
-
   document.addEventListener('click', function (event) {
-    var toggle = event.target.closest('[data-theme-toggle]');
-    if (toggle) {
-      var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      applyTheme(next);
-      return;
-    }
     var searchToggle = event.target.closest('[data-search-toggle]');
     if (searchToggle) {
       var quickSearch = document.querySelector('[data-filter]');
@@ -288,7 +251,6 @@
   }
 
   function boot() {
-    syncThemeLabel();
     setupDrawer();
     setupFilter();
     setupToc();
